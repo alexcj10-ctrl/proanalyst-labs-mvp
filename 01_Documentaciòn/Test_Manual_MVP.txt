@@ -1,0 +1,15 @@
+Test manual MVP
+
+Input
+Sistema propio: 4-3-3
+Sistema rival: 3-5-2
+Contexto: Presión alta
+
+Proceso esperado
+La app consulta el índice de secuencias.
+Selecciona Secuencia 003.
+La IA ajusta posiciones y tiempos.
+Se genera un video 2D MP4.
+
+Resultado esperado
+Animación coherente con presión alta sobre 3-5-2.

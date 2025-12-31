@@ -1,0 +1,50 @@
+# Arquitectura_MVP.txt
+
+Input: Selecciones del entrenador
+Lógica: IA elige y ajusta una secuencia táctica
+Generación: Motor crea animación 2D
+Output: Video MP4 mostrado en la app
+
+Decisión clave MVP
+La app NO genera el video dentro del móvil: lo solicita a un servicio (backend) que devuelve el MP4.
+
+Stack app (MVP)
+Frontend: Flutter
+
+Stack backend (MVP)
+Backend: Python (FastAPI)
+
+Comunicación (MVP)
+API REST: la app envía los 3 inputs y recibe una URL del MP4.
+
+Flujo técnico (MVP)
+1) App envía inputs al backend
+2) Backend valida inputs
+3) Backend genera animación 2D
+4) Backend guarda MP4 y crea URL
+5) App reproduce el MP4 desde la URL
+
+Request API (MVP)
+{ "own_system": "4-3-3", "rival_system": "4-3-3", "pressure": "alta" }
+
+Respuesta API (MVP)
+{ "video_url": "https://..." }
+
+Almacenamiento videos (MVP)
+Cloud storage: Amazon S3
+
+Endpoint (MVP)
+POST /generate
+
+Job ID (MVP)
+La API devuelve un job_id y luego la app consulta el estado hasta obtener video_url.
+
+Endpoints (MVP)
+POST /generate → devuelve { "job_id": "..." }
+GET /status/{job_id} → devuelve { "status": "...", "video_url": "..." }
+
+Estados (MVP)
+queued
+processing
+done
+error

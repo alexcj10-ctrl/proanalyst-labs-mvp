@@ -1,0 +1,16 @@
+Rol de la IA (MVP)
+Generar una animación táctica 2D coherente a partir de inputs estructurados.
+
+Inputs IA
+- Sistema propio
+- Sistema rival
+- Tipo de presión
+
+Salida IA
+- Secuencia táctica (inicio → desarrollo → final)
+- Video 2D MP4
+
+Restricciones
+- No inventa tácticas nuevas
+- Usa solo patrones tácticos predefinidos
+- Mantiene coherencia espacial y temporal

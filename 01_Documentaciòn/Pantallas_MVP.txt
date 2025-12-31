@@ -1,0 +1,7 @@
+# Pantallas_MVP.txt
+
+Pantalla A (Selección): 3 selectores + botón “Generar animación”
+Pantalla B (Resultado): reproductor de video + botón “Generar otra”
+
+Estado de espera (MVP)
+Pantalla de carga con indicador de progreso hasta recibir la URL del video.

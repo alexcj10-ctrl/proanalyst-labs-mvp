@@ -1,0 +1,15 @@
+# Costes_MVP.txt
+
+Costes principales (MVP)
+
+Backend (servidor)
+30–50 €/mes
+
+Generación IA
+0,10–0,30 € por video generado
+
+Almacenamiento de videos
+5–10 €/mes
+
+Tráfico de datos
+5–10 €/mes

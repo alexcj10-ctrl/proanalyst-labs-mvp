@@ -1,0 +1,22 @@
+Secuencia 001
+
+Sistema propio
+4-3-3
+
+Sistema rival
+4-3-3
+
+Contexto
+Presión alta
+
+Estado inicial
+Bloque medio-alto, líneas compactas, extremos orientan salida rival hacia banda.
+
+Evento desencadenante
+Primer pase del central rival hacia lateral.
+
+Movimiento colectivo principal
+Basculación del bloque hacia banda fuerte con salto coordinado del extremo y del interior.
+
+Resultado táctico esperado
+Forzar pase largo o recuperación en banda.

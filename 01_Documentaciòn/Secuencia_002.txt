@@ -1,0 +1,22 @@
+Secuencia 002
+
+Sistema propio
+4-3-3
+
+Sistema rival
+4-3-3
+
+Contexto
+Presión baja
+
+Estado inicial
+Bloque medio-bajo, líneas juntas, extremos cerrados protegiendo pasillos interiores.
+
+Evento desencadenante
+Control orientado del mediocentro rival.
+
+Movimiento colectivo principal
+Repliegue coordinado y cierre de líneas de pase interiores.
+
+Resultado táctico esperado
+Forzar circulación lenta y pase horizontal.

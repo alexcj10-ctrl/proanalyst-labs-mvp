@@ -1,0 +1,9 @@
+# Roadmap_MVP.txt
+
+Roadmap MVP
+
+👉 EN CURSO: 1) Diseño táctico base (secuencias)
+2) Generador de animaciones 2D
+3) Backend /generate + /status
+4) App móvil (Flutter)
+5) Pruebas con entrenadores

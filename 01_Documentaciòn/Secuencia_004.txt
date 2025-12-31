@@ -1,0 +1,22 @@
+Secuencia 004
+
+Sistema propio
+4-3-3
+
+Sistema rival
+3-5-2
+
+Contexto
+Presión baja
+
+Estado inicial
+Bloque medio-bajo protegiendo carril central, extremos cerrados y laterales en altura media.
+
+Evento desencadenante
+Recepción del carrilero rival en campo propio.
+
+Movimiento colectivo principal
+Basculación del bloque sin saltar presión, manteniendo superioridad interior.
+
+Resultado táctico esperado
+Cerrar progresión interior y forzar pase atrás.

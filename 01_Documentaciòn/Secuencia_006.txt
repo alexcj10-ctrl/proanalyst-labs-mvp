@@ -1,0 +1,22 @@
+Secuencia 006
+
+Sistema propio
+4-3-3
+
+Sistema rival
+4-4-2
+
+Contexto
+Presión baja
+
+Estado inicial
+Bloque medio-bajo con dos líneas compactas, delanteros orientando salida rival hacia banda.
+
+Evento desencadenante
+Recepción del lateral rival en campo propio.
+
+Movimiento colectivo principal
+Desplazamiento lateral del bloque manteniendo distancias y cerrando pasillos interiores.
+
+Resultado táctico esperado
+Forzar circulación lenta y pase atrás.

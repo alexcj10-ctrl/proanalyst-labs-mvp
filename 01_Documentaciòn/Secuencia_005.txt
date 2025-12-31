@@ -1,0 +1,22 @@
+Secuencia 005
+
+Sistema propio
+4-3-3
+
+Sistema rival
+4-4-2
+
+Contexto
+Presión alta
+
+Estado inicial
+Bloque alto con delantero orientando salida hacia un costado y extremos preparados para saltar.
+
+Evento desencadenante
+Pase horizontal entre centrales rivales.
+
+Movimiento colectivo principal
+Salto coordinado del delantero y extremo del lado fuerte, interior cierra línea interior.
+
+Resultado táctico esperado
+Forzar pase largo o error técnico del central.

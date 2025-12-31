@@ -1,0 +1,13 @@
+Indice de Secuencias – MVP
+
+4-3-3 vs 4-3-3
+- Presión alta → Secuencia 001
+- Presión baja → Secuencia 002
+
+4-3-3 vs 3-5-2
+- Presión alta → Secuencia 003
+- Presión baja → Secuencia 004
+
+4-3-3 vs 4-4-2
+- Presión alta → Secuencia 005
+- Presión baja → Secuencia 006

@@ -1,0 +1,22 @@
+Secuencia 003
+
+Sistema propio
+4-3-3
+
+Sistema rival
+3-5-2
+
+Contexto
+Presión alta
+
+Estado inicial
+Bloque alto con extremos orientados a centrales exteriores y delantero fijando central libre.
+
+Evento desencadenante
+Recepción del central exterior del rival.
+
+Movimiento colectivo principal
+Salto agresivo del extremo, interior cierra por dentro y lateral ajusta altura.
+
+Resultado táctico esperado
+Encerrar al rival en banda y provocar pérdida.
