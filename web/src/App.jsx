@@ -68,7 +68,7 @@ export default function App() {
 
       if (!res.ok) {
         const txt = await res.text();
-        setLoginError(`Login fallido (${res.status}). ${txt}`);
+        setLoginError(`Login failed (${res.status}). ${txt}`);
         setLoginLoading(false);
         return;
       }
@@ -84,7 +84,7 @@ export default function App() {
       setVideoUrl("");
       setLoginLoading(false);
     } catch (err) {
-      setLoginError(`Error de red: ${String(err)}`);
+      setLoginError(`Network error: ${String(err)}`);
       setLoginLoading(false);
     }
   };
@@ -106,7 +106,7 @@ export default function App() {
           return;
         }
         if (!res.ok) {
-          setMessage(`Error cargando opciones (${res.status}).`);
+          setMessage(`Error loading options (${res.status}).`);
           return;
         }
 
@@ -122,7 +122,7 @@ export default function App() {
         setOpp(dOpp);
         setPress(dPress);
       } catch {
-        if (!cancelled) setMessage("No se pudieron cargar las opciones.");
+        if (!cancelled) setMessage("Could not load options.");
       } finally {
         if (!cancelled) setLoadingOptions(false);
       }
@@ -160,7 +160,7 @@ export default function App() {
       if (!res.ok) {
         const txt = await res.text();
         setStatus("");
-        setMessage(`Error generando (${res.status}). ${txt}`);
+        setMessage(`Error generating (${res.status}). ${txt}`);
         return;
       }
 
@@ -168,7 +168,7 @@ export default function App() {
       setJobId(data.job_id);
     } catch {
       setStatus("");
-      setMessage("Error de red generando el vídeo.");
+      setMessage("Network error while generating the video.");
     }
   }, [authHeaders, own, opp, press, logout]);
 
@@ -191,7 +191,7 @@ export default function App() {
         }
         if (!res.ok) {
           if (!cancelled) {
-            setMessage(`Error consultando estado (${res.status}).`);
+            setMessage(`Error checking status (${res.status}).`);
             setStatus("");
           }
           return;
@@ -212,21 +212,21 @@ export default function App() {
 
         if (s === "no_sequence") {
           setVideoUrl("");
-          setMessage("No existe vídeo para esta combinación.");
+          setMessage("No video exists for this combination.");
           return;
         }
 
         if (s === "not_found") {
           setVideoUrl("");
-          setMessage("Job no encontrado. Vuelve a generar.");
+          setMessage("Job not found. Please generate again.");
           return;
         }
 
-        // cualquier otro estado => seguimos consultando
+        // any other status => keep polling
         timer = window.setTimeout(poll, 550);
       } catch {
         if (!cancelled) {
-          setMessage("Error consultando estado.");
+          setMessage("Error checking status.");
           setStatus("");
         }
       }
@@ -253,12 +253,12 @@ export default function App() {
           </div>
 
           <p className="small" style={{ marginTop: 0 }}>
-            Acceso seguro (demo).
+            Secure access (demo).
           </p>
 
           <form onSubmit={doLogin} style={{ display: "grid", gap: 12 }}>
             <label className="label">
-              <span>Usuario</span>
+              <span>Username</span>
               <input
                 className="input"
                 value={username}
@@ -268,7 +268,7 @@ export default function App() {
             </label>
 
             <label className="label">
-              <span>Contraseña</span>
+              <span>Password</span>
               <input
                 className="input"
                 type="password"
@@ -283,10 +283,10 @@ export default function App() {
             <button className="btn btnPrimary" type="submit" disabled={loginLoading}>
               {loginLoading ? (
                 <span style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
-                  <span className="spinner" /> Entrando…
+                  <span className="spinner" /> Signing in…
                 </span>
               ) : (
-                "Entrar"
+                "Sign in"
               )}
             </button>
 
@@ -314,7 +314,7 @@ export default function App() {
           </div>
 
           <button className="btn" onClick={logout}>
-            Salir
+            Logout
           </button>
         </div>
 
@@ -373,14 +373,14 @@ export default function App() {
               >
                 {loadingOptions ? (
                   <span style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
-                    <span className="spinner" /> Cargando…
+                    <span className="spinner" /> Loading…
                   </span>
                 ) : generating ? (
                   <span style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
-                    <span className="spinner" /> Generando…
+                    <span className="spinner" /> Generating…
                   </span>
                 ) : (
-                  "Generar"
+                  "Generate"
                 )}
               </button>
             </div>
@@ -388,7 +388,7 @@ export default function App() {
             <div className="metaRow">
               <div className="badge">
                 <span className={`dot ${statusDot(status)}`} />
-                Estado: <b style={{ color: "white" }}>{status || "idle"}</b>
+                Status: <b style={{ color: "white" }}>{status || "idle"}</b>
               </div>
 
               {jobId ? (
@@ -409,15 +409,15 @@ export default function App() {
           <div className="card">
             <div className="player">
               <div className="playerHeader">
-                <div className="hint">Reproductor</div>
-                <div className="small">Vídeo protegido por login</div>
+                <div className="hint">Player</div>
+                <div className="small">Video protected by login</div>
               </div>
 
               {videoUrl ? (
                 <video className="video" key={videoUrl} src={videoUrl} controls />
               ) : (
                 <div className="placeholder">
-                  Selecciona una combinación y pulsa <b>Generar</b>.
+                  Select a combination and click <b>Generate</b>.
                 </div>
               )}
             </div>
@@ -426,11 +426,11 @@ export default function App() {
           <div className="card">
             <div className="cardInner">
               <div style={{ display: "grid", gap: 10 }}>
-                <div style={{ fontWeight: 800 }}>Modo Demo</div>
+                <div style={{ fontWeight: 800 }}>Demo Mode</div>
                 <div className="small">
-                  Esto ya es presentable: login + catálogo + reproductor.
+                  This is already presentable: login + catalog + player.
                   <br />
-                  El siguiente paso es ponerlo en URL pública con HTTPS.
+                  The next step is to publish it with a public HTTPS URL.
                 </div>
 
                 <div className="badge">
@@ -439,10 +439,10 @@ export default function App() {
                 </div>
 
                 <div className="small">
-                  Cuando quieras, hacemos:
-                  <br />• Backend en servidor
-                  <br />• Frontend en dominio
-                  <br />• PWA (instalable) opcional
+                  Whenever you want, we can do:
+                  <br />• Backend on a server
+                  <br />• Frontend on a domain
+                  <br />• Optional PWA (installable)
                 </div>
               </div>
             </div>
@@ -452,3 +452,4 @@ export default function App() {
     </div>
   );
 }
+
