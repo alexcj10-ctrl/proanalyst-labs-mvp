@@ -30,10 +30,16 @@ DEMO_PASS = os.getenv("DEMO_PASS", "admin123")
 
 VIDEOS_DIR = os.path.join(os.path.dirname(__file__), "videos")
 
+# CORS: producción + local
 ALLOWED_ORIGINS = [
     "https://proanalyst-labs-mvp.vercel.app",
     "http://localhost:5173",
 ]
+
+# Permitir previews de Vercel SOLO de este proyecto
+# Ej:
+# https://proanalyst-labs-xxxxxx-alejandros-projects-xxxx.vercel.app
+VERCEL_PREVIEW_REGEX = r"^https:\/\/proanalyst-labs(-.*)?\.vercel\.app$"
 
 
 # --------------------
@@ -44,6 +50,7 @@ app = FastAPI(title=APP_NAME)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
+    allow_origin_regex=VERCEL_PREVIEW_REGEX,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
