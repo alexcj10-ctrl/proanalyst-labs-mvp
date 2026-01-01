@@ -7,8 +7,8 @@ from __future__ import annotations
 DEFAULT_VIDEO = "433_vs_433_pressing_1.mp4"
 
 OPTIONS = {
-    "own": ["4-3-3", "3-5-2"],
-    "opp": ["4-3-3", "3-5-2"],
+    "own": ["4-3-3", "3-5-2", "3-4-3"],
+    "opp": ["4-3-3", "3-5-2", "3-4-3"],
     "press": ["pressing_1", "pressing_2"],
 }
 
@@ -23,6 +23,9 @@ SEQUENCE_INDEX = {
 
     # 3-5-2 vs 4-3-3
     ("3-5-2", "4-3-3", "pressing_1"): "352_vs_433_pressing_1.mp4",
+
+    # 3-4-3 vs 4-3-3
+    ("3-4-3", "4-3-3", "pressing_1"): "343_vs_433_pressing_1.mp4",
 }
 
 # =========================
