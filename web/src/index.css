@@ -1,6 +1,6 @@
-/* Base global (sin pelear con App.css) */
+/* Base global (sin pelear con App.jsx inline styles) */
 
-:root{
+:root {
   font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
   line-height: 1.5;
   font-weight: 400;
@@ -8,22 +8,52 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  /* ayuda a inputs/selects (sin cambiar tu tema) */
+  color-scheme: dark;
 }
 
-html, body{
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
   height: 100%;
 }
 
-body{
+body {
   margin: 0;
-  /* NO flex/center aquí: tu App.css ya gestiona layout */
+  /* NO flex/center aquí: App.jsx ya gestiona el layout */
 }
 
 /* enlaces */
-a{
+a {
   color: inherit;
   text-decoration: none;
 }
-a:hover{
+a:hover {
   text-decoration: underline;
+}
+
+/* accesibilidad: focus visible (no rompe estilos inline) */
+:focus-visible {
+  outline: 2px solid rgba(124, 58, 237, 0.9);
+  outline-offset: 2px;
+}
+
+/* selección de texto */
+::selection {
+  background: rgba(124, 58, 237, 0.35);
+}
+
+/* respeta reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    scroll-behavior: auto !important;
+    transition: none !important;
+    animation: none !important;
+  }
 }

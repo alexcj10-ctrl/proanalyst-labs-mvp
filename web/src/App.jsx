@@ -1,6 +1,6 @@
 // web/src/App.jsx
-
 import { useEffect, useMemo, useState } from "react";
+import "./App.css";
 
 const API_BASE = import.meta.env.VITE_API_URL;
 
@@ -8,6 +8,7 @@ export default function App() {
   const [token, setToken] = useState(localStorage.getItem("token") || "");
   const isAuthed = Boolean(token);
 
+  // login
   const [username, setUsername] = useState("admin");
   const [password, setPassword] = useState("admin123");
   const [loginError, setLoginError] = useState("");
@@ -29,9 +30,7 @@ export default function App() {
   const [videoUrl, setVideoUrl] = useState("");
   const [message, setMessage] = useState("");
 
-  const authHeaders = useMemo(() => {
-    return token ? { Authorization: `Bearer ${token}` } : {};
-  }, [token]);
+  const authHeaders = useMemo(() => (token ? { Authorization: `Bearer ${token}` } : {}), [token]);
 
   const logout = () => {
     localStorage.removeItem("token");
@@ -47,6 +46,7 @@ export default function App() {
     setStatus("");
     setVideoUrl("");
     setMessage("");
+    setLoginError("");
   };
 
   const loadCatalog = async (jwt) => {
@@ -55,6 +55,7 @@ export default function App() {
     });
     if (!res.ok) throw new Error("Failed to load catalog");
     const data = await res.json();
+
     setCatalog(data);
 
     const ownArr = data.own || [];
@@ -80,6 +81,7 @@ export default function App() {
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoginError("");
+    setMessage("");
 
     try {
       const body = new URLSearchParams();
@@ -103,7 +105,7 @@ export default function App() {
       setToken(jwt);
 
       await loadCatalog(jwt);
-    } catch (err) {
+    } catch {
       setLoginError("Network error");
     }
   };
@@ -112,27 +114,26 @@ export default function App() {
   useEffect(() => {
     if (!token) return;
     loadCatalog(token).catch(() => {
-      // token inválido o backend no responde
       logout();
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // When own changes -> update oppList and pressList (keep selection if still valid)
+  // When own changes -> update oppList and pressList
   useEffect(() => {
     if (!catalog || !own) return;
 
     const nextOppList = catalog.opp_by_own?.[own] || [];
     setOppList(nextOppList);
 
-    const nextOpp = nextOppList.includes(opp) ? opp : (nextOppList[0] || "");
+    const nextOpp = nextOppList.includes(opp) ? opp : nextOppList[0] || "";
     if (nextOpp !== opp) setOpp(nextOpp);
 
     const key = `${own}|${nextOpp}`;
     const nextPressList = catalog.press_by_pair?.[key] || [];
     setPressList(nextPressList);
 
-    const nextPress = nextPressList.includes(press) ? press : (nextPressList[0] || "");
+    const nextPress = nextPressList.includes(press) ? press : nextPressList[0] || "";
     if (nextPress !== press) setPress(nextPress);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [own, catalog]);
@@ -145,7 +146,7 @@ export default function App() {
     const nextPressList = catalog.press_by_pair?.[key] || [];
     setPressList(nextPressList);
 
-    const nextPress = nextPressList.includes(press) ? press : (nextPressList[0] || "");
+    const nextPress = nextPressList.includes(press) ? press : nextPressList[0] || "";
     if (nextPress !== press) setPress(nextPress);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [opp, own, catalog]);
@@ -201,10 +202,7 @@ export default function App() {
         setStatus(data.status);
 
         if (data.status === "done") {
-          // video_url comes as relative path
-          const full = data.video_url.startsWith("http")
-            ? data.video_url
-            : `${API_BASE}${data.video_url}`;
+          const full = data.video_url.startsWith("http") ? data.video_url : `${API_BASE}${data.video_url}`;
           setVideoUrl(full);
           clearInterval(intervalId);
         }
@@ -227,136 +225,189 @@ export default function App() {
     };
   }, [jobId, token]);
 
-  // UI
+  const dotClass = useMemo(() => {
+    if (!status) return "dot";
+    if (status === "done") return "dot ok";
+    if (status === "queued" || status === "processing") return "dot warn";
+    if (status === "no_sequence") return "dot danger";
+    return "dot";
+  }, [status]);
+
+  const showSpinner = status === "queued" || status === "processing";
+
+  // ---------- LOGIN UI ----------
   if (!isAuthed) {
     return (
-      <div style={styles.page}>
-        <div style={styles.card}>
-          <h1 style={styles.title}>ProAnalyst Labs</h1>
-          <p style={styles.subtitle}>MVP · Tactical Video Server</p>
+      <div className="loginWrap">
+        <div className="card loginCard">
+          <div className="loginTitle">
+            <h2>ProAnalyst Labs</h2>
+            <span className="small">MVP</span>
+          </div>
+          <p className="small">Tactical Video Server · Secure Login</p>
 
-          <form onSubmit={handleLogin} style={{ marginTop: 18 }}>
-            <div style={styles.row}>
-              <label style={styles.label}>User</label>
+          <form onSubmit={handleLogin} style={{ marginTop: 14 }}>
+            <label className="label">
+              <span>User</span>
               <input
-                style={styles.input}
+                className="input"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 autoComplete="username"
               />
-            </div>
+            </label>
 
-            <div style={styles.row}>
-              <label style={styles.label}>Password</label>
+            <div style={{ height: 12 }} />
+
+            <label className="label">
+              <span>Password</span>
               <input
-                style={styles.input}
+                className="input"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 autoComplete="current-password"
               />
-            </div>
+            </label>
 
-            {loginError ? <div style={styles.error}>{loginError}</div> : null}
+            {loginError ? (
+              <div className="alert alertDanger" style={{ marginTop: 12 }}>
+                {loginError}
+              </div>
+            ) : null}
 
-            <button style={styles.button} type="submit">
+            <button className="btn btnPrimary" style={{ width: "100%", marginTop: 12 }} type="submit">
               Login
             </button>
           </form>
+        </div>
+
+        <div className="small" style={{ opacity: 0.7, marginTop: 16, textAlign: "center" }}>
+          @proanalyst_labs 312 West Madison Street. Chicago , IL
         </div>
       </div>
     );
   }
 
+  // ---------- APP UI ----------
   return (
-    <div style={styles.page}>
-      <div style={styles.topbar}>
-        <div>
-          <div style={styles.title}>ProAnalyst Labs</div>
-          <div style={styles.subtitle}>MVP · Tactical Video Server</div>
-        </div>
-        <button onClick={logout} style={styles.logout}>
-          Logout
-        </button>
-      </div>
-
-      <div style={styles.cardWide}>
-        <div style={styles.controls}>
-          <div style={styles.control}>
-            <div style={styles.labelSmall}>Own</div>
-            <select style={styles.select} value={own} onChange={(e) => setOwn(e.target.value)}>
-              {ownList.map((x) => (
-                <option key={x} value={x}>
-                  {x}
-                </option>
-              ))}
-            </select>
+    <div className="wrap">
+      <div className="shell">
+        <div className="topbar">
+          <div className="brand">
+            <h1>ProAnalyst Labs</h1>
+            <p>MVP · Tactical Video Server</p>
           </div>
 
-          <div style={styles.control}>
-            <div style={styles.labelSmall}>Opp</div>
-            <select style={styles.select} value={opp} onChange={(e) => setOpp(e.target.value)}>
-              {oppList.map((x) => (
-                <option key={x} value={x}>
-                  {x}
-                </option>
-              ))}
-            </select>
+          <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end" }}>
+            <span className="badge" title={API_BASE}>
+              API: <b>{String(API_BASE || "").replace(/^https?:\/\//, "")}</b>
+            </span>
+            <button onClick={logout} className="btn">
+              Logout
+            </button>
           </div>
-
-          <div style={styles.control}>
-            <div style={styles.labelSmall}>Press</div>
-            <select style={styles.select} value={press} onChange={(e) => setPress(e.target.value)}>
-              {pressList.map((x) => (
-                <option key={x} value={x}>
-                  {x}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <button style={{ ...styles.button, height: 42 }} onClick={handleGenerate} disabled={!canGenerate}>
-            Generate
-          </button>
         </div>
 
-        <div style={styles.statusRow}>
-          <div style={styles.badge}>
-            <span style={{ ...styles.dot, background: status === "no_sequence" ? "#ff4d4f" : "#4cd964" }} />
-            Status: <b style={{ marginLeft: 6 }}>{status || "ready"}</b>
-          </div>
-          {jobId ? <div style={styles.badge}>Job: {jobId}</div> : null}
-        </div>
+        <div className="card">
+          <div className="cardInner">
+            <div className="grid">
+              <label className="label">
+                <span>Own</span>
+                <select value={own} onChange={(e) => setOwn(e.target.value)}>
+                  {ownList.map((x) => (
+                    <option key={x} value={x}>
+                      {x}
+                    </option>
+                  ))}
+                </select>
+              </label>
 
-        {message ? <div style={styles.message}>{message}</div> : null}
+              <label className="label">
+                <span>Opp</span>
+                <select value={opp} onChange={(e) => setOpp(e.target.value)}>
+                  {oppList.map((x) => (
+                    <option key={x} value={x}>
+                      {x}
+                    </option>
+                  ))}
+                </select>
+              </label>
 
-        <div style={styles.grid}>
-          <div style={styles.panel}>
-            <div style={styles.panelTitle}>Player</div>
-            {videoUrl ? (
-              <video key={videoUrl} src={videoUrl} controls style={styles.video} />
-            ) : (
-              <div style={styles.placeholder}>Select a combination and click <b>Generate</b>.</div>
-            )}
-          </div>
+              <label className="label">
+                <span>Press</span>
+                <select value={press} onChange={(e) => setPress(e.target.value)}>
+                  {pressList.map((x) => (
+                    <option key={x} value={x}>
+                      {x}
+                    </option>
+                  ))}
+                </select>
+              </label>
 
-          <div style={styles.panel}>
-            <div style={styles.panelTitle}>Demo Mode</div>
-            <div style={styles.panelText}>
-              This is already presentable: login + catalog + player.
-              <br />
-              The next step is to publish it with a public HTTPS URL.
+              <button className="btn btnPrimary" onClick={handleGenerate} disabled={!canGenerate}>
+                {showSpinner ? (
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
+                    <span className="spinner" /> Generating
+                  </span>
+                ) : (
+                  "Generate"
+                )}
+              </button>
             </div>
-            <div style={styles.badge}>
-              <span style={{ ...styles.dot, background: "#4cd964" }} /> Ready to deploy
+
+            <div className="metaRow">
+              <span className="badge">
+                <span className={dotClass} /> Status: <b>{status || "ready"}</b>
+              </span>
+              {jobId ? <span className="badge">Job: {jobId}</span> : null}
             </div>
-            <div style={styles.panelText}>
-              Whenever you want, we can do:
-              <ul>
-                <li>Backend on a server</li>
-                <li>Frontend on a domain</li>
-                <li>Optional PWA (installable)</li>
-              </ul>
+
+            {message ? <div className="alert alertDanger">{message}</div> : null}
+
+            <div className="split">
+              <div className="card player">
+                <div className="playerHeader">
+                  <b>Player</b>
+                  <span className="hint">Select a valid combo and generate.</span>
+                </div>
+
+                {videoUrl ? (
+                  <video key={videoUrl} src={videoUrl} controls className="video" />
+                ) : (
+                  <div className="placeholder">
+                    Select a combination and click <b>Generate</b>.
+                  </div>
+                )}
+              </div>
+
+              <div className="card player">
+                <div className="playerHeader">
+                  <b>Info</b>
+                  <span className="hint">Production build</span>
+                </div>
+
+                <div className="small" style={{ lineHeight: 1.6 }}>
+                  Catalog-driven UI (only valid combinations).
+                  <br />
+                  JWT auth · status polling · video playback.
+                  <br />
+                  <br />
+                  Connected to:
+                  <br />
+                  <b>{String(API_BASE || "")}</b>
+                </div>
+
+                <div style={{ marginTop: 12 }}>
+                  <span className="badge">
+                    <span className="dot ok" /> Production OK
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="small" style={{ opacity: 0.7, marginTop: 18, textAlign: "center" }}>
+              @proanalyst_labs 312 West Madison Street. Chicago , IL
             </div>
           </div>
         </div>
@@ -364,129 +415,3 @@ export default function App() {
     </div>
   );
 }
-
-// Quick inline styling (simple MVP)
-const styles = {
-  page: {
-    minHeight: "100vh",
-    background: "linear-gradient(135deg, #0b0f14 0%, #0f1720 60%, #101a24 100%)",
-    color: "white",
-    padding: 24,
-    fontFamily: "system-ui, -apple-system, Segoe UI, Roboto, Arial",
-  },
-  topbar: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 18,
-  },
-  title: { fontSize: 26, fontWeight: 800, letterSpacing: 0.2 },
-  subtitle: { opacity: 0.8, marginTop: 6 },
-  card: {
-    maxWidth: 520,
-    margin: "80px auto",
-    padding: 22,
-    borderRadius: 16,
-    background: "rgba(255,255,255,0.04)",
-    border: "1px solid rgba(255,255,255,0.08)",
-    backdropFilter: "blur(10px)",
-  },
-  cardWide: {
-    maxWidth: 1120,
-    margin: "0 auto",
-    padding: 18,
-    borderRadius: 16,
-    background: "rgba(255,255,255,0.04)",
-    border: "1px solid rgba(255,255,255,0.08)",
-    backdropFilter: "blur(10px)",
-  },
-  row: { display: "grid", gridTemplateColumns: "120px 1fr", gap: 12, marginBottom: 12, alignItems: "center" },
-  label: { opacity: 0.85 },
-  labelSmall: { opacity: 0.8, fontSize: 12, marginBottom: 6 },
-  input: {
-    width: "100%",
-    padding: "10px 12px",
-    borderRadius: 12,
-    border: "1px solid rgba(255,255,255,0.12)",
-    background: "rgba(0,0,0,0.25)",
-    color: "white",
-    outline: "none",
-  },
-  select: {
-    width: "100%",
-    padding: "10px 12px",
-    borderRadius: 12,
-    border: "1px solid rgba(255,255,255,0.12)",
-    background: "rgba(0,0,0,0.25)",
-    color: "white",
-    outline: "none",
-  },
-  button: {
-    width: "100%",
-    marginTop: 12,
-    padding: "10px 12px",
-    borderRadius: 12,
-    border: "1px solid rgba(255,255,255,0.12)",
-    background: "linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%)",
-    color: "white",
-    fontWeight: 700,
-    cursor: "pointer",
-    opacity: 1,
-  },
-  logout: {
-    padding: "10px 14px",
-    borderRadius: 12,
-    border: "1px solid rgba(255,255,255,0.12)",
-    background: "rgba(255,255,255,0.05)",
-    color: "white",
-    cursor: "pointer",
-  },
-  error: { marginTop: 10, color: "#ff6b6b" },
-  controls: {
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr 1fr 140px",
-    gap: 12,
-    alignItems: "end",
-  },
-  control: {},
-  statusRow: { display: "flex", gap: 10, alignItems: "center", marginTop: 12, flexWrap: "wrap" },
-  badge: {
-    display: "inline-flex",
-    alignItems: "center",
-    gap: 8,
-    padding: "8px 10px",
-    borderRadius: 999,
-    background: "rgba(0,0,0,0.25)",
-    border: "1px solid rgba(255,255,255,0.10)",
-    fontSize: 13,
-  },
-  dot: { width: 8, height: 8, borderRadius: 99, display: "inline-block" },
-  message: {
-    marginTop: 12,
-    padding: 12,
-    borderRadius: 12,
-    background: "rgba(255, 77, 79, 0.12)",
-    border: "1px solid rgba(255, 77, 79, 0.25)",
-  },
-  grid: { display: "grid", gridTemplateColumns: "1.6fr 1fr", gap: 14, marginTop: 14 },
-  panel: {
-    borderRadius: 16,
-    padding: 14,
-    border: "1px solid rgba(255,255,255,0.08)",
-    background: "rgba(0,0,0,0.20)",
-    minHeight: 260,
-  },
-  panelTitle: { fontWeight: 800, marginBottom: 10 },
-  panelText: { opacity: 0.9, lineHeight: 1.5, fontSize: 13 },
-  placeholder: {
-    borderRadius: 14,
-    border: "1px dashed rgba(255,255,255,0.18)",
-    background: "rgba(0,0,0,0.15)",
-    height: 220,
-    display: "grid",
-    placeItems: "center",
-    opacity: 0.9,
-  },
-  video: { width: "100%", borderRadius: 14, border: "1px solid rgba(255,255,255,0.10)" },
-};
-
