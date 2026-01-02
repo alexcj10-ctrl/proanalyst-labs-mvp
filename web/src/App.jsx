@@ -30,7 +30,10 @@ export default function App() {
   const [videoUrl, setVideoUrl] = useState("");
   const [message, setMessage] = useState("");
 
-  const authHeaders = useMemo(() => (token ? { Authorization: `Bearer ${token}` } : {}), [token]);
+  const authHeaders = useMemo(
+    () => (token ? { Authorization: `Bearer ${token}` } : {}),
+    [token]
+  );
 
   const logout = () => {
     localStorage.removeItem("token");
@@ -110,16 +113,14 @@ export default function App() {
     }
   };
 
-  // On mount: if token exists, load catalog
+  // On mount
   useEffect(() => {
     if (!token) return;
-    loadCatalog(token).catch(() => {
-      logout();
-    });
+    loadCatalog(token).catch(() => logout());
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // When own changes -> update oppList and pressList
+  // Own → Opp + Press
   useEffect(() => {
     if (!catalog || !own) return;
 
@@ -133,12 +134,14 @@ export default function App() {
     const nextPressList = catalog.press_by_pair?.[key] || [];
     setPressList(nextPressList);
 
-    const nextPress = nextPressList.includes(press) ? press : nextPressList[0] || "";
+    const nextPress = nextPressList.includes(press)
+      ? press
+      : nextPressList[0] || "";
     if (nextPress !== press) setPress(nextPress);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [own, catalog]);
 
-  // When opp changes -> update pressList
+  // Opp → Press
   useEffect(() => {
     if (!catalog || !own || !opp) return;
 
@@ -146,7 +149,9 @@ export default function App() {
     const nextPressList = catalog.press_by_pair?.[key] || [];
     setPressList(nextPressList);
 
-    const nextPress = nextPressList.includes(press) ? press : nextPressList[0] || "";
+    const nextPress = nextPressList.includes(press)
+      ? press
+      : nextPressList[0] || "";
     if (nextPress !== press) setPress(nextPress);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [opp, own, catalog]);
@@ -202,7 +207,9 @@ export default function App() {
         setStatus(data.status);
 
         if (data.status === "done") {
-          const full = data.video_url.startsWith("http") ? data.video_url : `${API_BASE}${data.video_url}`;
+          const full = data.video_url.startsWith("http")
+            ? data.video_url
+            : `${API_BASE}${data.video_url}`;
           setVideoUrl(full);
           clearInterval(intervalId);
         }
@@ -211,9 +218,7 @@ export default function App() {
           setMessage("No video exists for this combination.");
           clearInterval(intervalId);
         }
-      } catch {
-        // ignore transient
-      }
+      } catch {}
     };
 
     poll();
@@ -235,7 +240,7 @@ export default function App() {
 
   const showSpinner = status === "queued" || status === "processing";
 
-  // ---------- LOGIN UI ----------
+  // ---------- LOGIN ----------
   if (!isAuthed) {
     return (
       <div className="loginWrap">
@@ -244,7 +249,17 @@ export default function App() {
             <h2>ProAnalyst Labs</h2>
             <span className="small">MVP</span>
           </div>
+
           <p className="small">Tactical Video Server · Secure Login</p>
+
+          {/* 🔑 DEMO CREDENTIALS */}
+          <div className="alert" style={{ marginTop: 12 }}>
+            <b>Demo credentials</b>
+            <br />
+            User: <b>admin</b>
+            <br />
+            Password: <b>admin123</b>
+          </div>
 
           <form onSubmit={handleLogin} style={{ marginTop: 14 }}>
             <label className="label">
@@ -276,20 +291,27 @@ export default function App() {
               </div>
             ) : null}
 
-            <button className="btn btnPrimary" style={{ width: "100%", marginTop: 12 }} type="submit">
+            <button
+              className="btn btnPrimary"
+              style={{ width: "100%", marginTop: 12 }}
+              type="submit"
+            >
               Login
             </button>
           </form>
         </div>
 
-        <div className="small" style={{ opacity: 0.7, marginTop: 16, textAlign: "center" }}>
+        <div
+          className="small"
+          style={{ opacity: 0.7, marginTop: 16, textAlign: "center" }}
+        >
           @proanalyst_labs 312 West Madison Street. Chicago , IL
         </div>
       </div>
     );
   }
 
-  // ---------- APP UI ----------
+  // ---------- APP ----------
   return (
     <div className="wrap">
       <div className="shell">
@@ -299,7 +321,7 @@ export default function App() {
             <p>MVP · Tactical Video Server</p>
           </div>
 
-          <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end" }}>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
             <span className="badge" title={API_BASE}>
               API: <b>{String(API_BASE || "").replace(/^https?:\/\//, "")}</b>
             </span>
@@ -345,9 +367,13 @@ export default function App() {
                 </select>
               </label>
 
-              <button className="btn btnPrimary" onClick={handleGenerate} disabled={!canGenerate}>
+              <button
+                className="btn btnPrimary"
+                onClick={handleGenerate}
+                disabled={!canGenerate}
+              >
                 {showSpinner ? (
-                  <span style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
+                  <span style={{ display: "inline-flex", gap: 8 }}>
                     <span className="spinner" /> Generating
                   </span>
                 ) : (
@@ -358,12 +384,15 @@ export default function App() {
 
             <div className="metaRow">
               <span className="badge">
-                <span className={dotClass} /> Status: <b>{status || "ready"}</b>
+                <span className={dotClass} /> Status:{" "}
+                <b>{status || "ready"}</b>
               </span>
               {jobId ? <span className="badge">Job: {jobId}</span> : null}
             </div>
 
-            {message ? <div className="alert alertDanger">{message}</div> : null}
+            {message ? (
+              <div className="alert alertDanger">{message}</div>
+            ) : null}
 
             <div className="split">
               <div className="card player">
@@ -373,7 +402,12 @@ export default function App() {
                 </div>
 
                 {videoUrl ? (
-                  <video key={videoUrl} src={videoUrl} controls className="video" />
+                  <video
+                    key={videoUrl}
+                    src={videoUrl}
+                    controls
+                    className="video"
+                  />
                 ) : (
                   <div className="placeholder">
                     Select a combination and click <b>Generate</b>.
@@ -406,7 +440,10 @@ export default function App() {
               </div>
             </div>
 
-            <div className="small" style={{ opacity: 0.7, marginTop: 18, textAlign: "center" }}>
+            <div
+              className="small"
+              style={{ opacity: 0.7, marginTop: 18, textAlign: "center" }}
+            >
               @proanalyst_labs 312 West Madison Street. Chicago , IL
             </div>
           </div>
