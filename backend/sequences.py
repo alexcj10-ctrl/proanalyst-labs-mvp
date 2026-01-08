@@ -1,19 +1,19 @@
 from __future__ import annotations
 
 # Catalog determinista: solo se expone lo que exista en SEQUENCE_INDEX.
-# Si una combinación no existe -> el frontend no la puede seleccionar (porque /catalog se genera desde aquí).
+# Dos "modos" para el mismo matchup: pizarra (whiteboard) y 3D.
 
 OPTIONS = {
     "own": ["4-3-3"],
-    "opp": ["4-3-3", "3-5-2", "4-2-3-1"],
-    "press": ["pressing_1"],
+    "opp": ["4-3-3"],
+    # Reutilizamos "press" como selector de modo/visualización para NO tocar frontend.
+    "press": ["whiteboard", "3d"],
 }
 
 # Mapa exacto (own, opp, press) -> filename mp4 en backend/videos/
 SEQUENCE_INDEX = {
-    ("4-3-3", "4-3-3", "pressing_1"): "433_vs_433_1.mp4",
-    ("4-3-3", "3-5-2", "pressing_1"): "433_vs_352_1.mp4",
-    ("4-3-3", "4-2-3-1", "pressing_1"): "433_vs_4231_1.mp4",
+    ("4-3-3", "4-3-3", "whiteboard"): "433vs433_1.mp4",
+    ("4-3-3", "4-3-3", "3d"): "433vs433_1_3d.mp4",
 }
 
 
