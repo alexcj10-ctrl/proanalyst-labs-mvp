@@ -36,15 +36,15 @@ a{ color:inherit; }
   flex:0 0 auto;
 }
 
-/* 🔥 LOGO MUY GRANDE EN LOGIN */
+/* LOGO HERO EN LOGIN */
 .loginWrap .logo{
-  height:200px;        /* ⬅️ AQUÍ EL TAMAÑO REAL */
-  max-height:240px;
-  max-width:360px;
-  margin-bottom:8px;
+  height:280px;
+  max-height:300px;
+  max-width:460px;
+  margin: 0 auto 14px;
 }
 
-/* Logo normal en la app */
+/* LOGO APP */
 .topbar .logo{
   height:36px;
   max-height:36px;
@@ -109,6 +109,9 @@ a{ color:inherit; }
   background:linear-gradient(135deg, rgba(124,58,237,.9), rgba(124,58,237,.55));
   border-color:rgba(124,58,237,.55);
 }
+.btnPrimary:hover{
+  background:linear-gradient(135deg, rgba(124,58,237,1), rgba(124,58,237,.65));
+}
 
 /* ================= CARDS ================= */
 .card{
@@ -120,6 +123,95 @@ a{ color:inherit; }
 
 .cardInner{ padding:18px; }
 
+/* ================= GRID ================= */
+.grid{
+  display:grid;
+  grid-template-columns:1fr 1fr 1fr auto;
+  gap:12px;
+  align-items:end;
+}
+@media (max-width:860px){
+  .grid{ grid-template-columns:1fr; }
+}
+
+/* ================= FORM ================= */
+.label{
+  display:grid;
+  gap:8px;
+}
+.label span{
+  font-size:12px;
+  color:var(--muted);
+}
+
+.input,
+select{
+  width:100%;
+  padding:11px 12px;
+  border-radius:14px;
+  border:1px solid var(--border);
+  background:rgba(0,0,0,.25);
+  color:var(--text);
+  outline:none;
+}
+.input:focus-visible,
+select:focus-visible{
+  outline:2px solid rgba(124,58,237,.55);
+  outline-offset:2px;
+}
+
+/* ================= BADGES ================= */
+.badge{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding:8px 10px;
+  border-radius:999px;
+  border:1px solid var(--border);
+  background:rgba(0,0,0,.18);
+}
+
+.dot{
+  width:8px;
+  height:8px;
+  border-radius:50%;
+  background:rgba(255,255,255,.35);
+}
+.dot.ok{ background:var(--ok); }
+.dot.warn{ background:#f59e0b; }
+.dot.danger{ background:var(--danger); }
+
+/* ================= ALERTS ================= */
+.alert{
+  margin-top:12px;
+  border-radius:14px;
+  border:1px solid var(--border);
+  background:rgba(0,0,0,.22);
+  padding:12px;
+}
+.alertDanger{
+  border-color:rgba(239,68,68,.35);
+  background:rgba(239,68,68,.08);
+}
+
+/* ================= PLAYER ================= */
+.player{ padding:16px; }
+
+.video{
+  width:100%;
+  border-radius:16px;
+  border:1px solid var(--border);
+  background:black;
+}
+
+.placeholder{
+  border:1px dashed rgba(255,255,255,.18);
+  border-radius:16px;
+  padding:18px;
+  color:var(--muted);
+  background:rgba(0,0,0,.18);
+}
+
 /* ================= LOGIN ================= */
 .loginWrap{
   min-height:100vh;
@@ -130,7 +222,7 @@ a{ color:inherit; }
 
 .loginCard{
   width:100%;
-  max-width:480px;   /* un poco más ancho para equilibrar el logo grande */
+  max-width:480px;
   padding:26px;
 }
 
@@ -148,53 +240,10 @@ a{ color:inherit; }
   font-size:22px;
 }
 
+/* ================= TEXT ================= */
 .small{
   font-size:12px;
   color:var(--muted);
-}
-
-/* ================= FORM ================= */
-.label{
-  display:grid;
-  gap:8px;
-}
-.label span{
-  font-size:12px;
-  color:var(--muted);
-}
-
-.input{
-  width:100%;
-  padding:11px 12px;
-  border-radius:14px;
-  border:1px solid var(--border);
-  background:rgba(0,0,0,.25);
-  color:var(--text);
-}
-
-select{
-  width:100%;
-  padding:11px 12px;
-  border-radius:14px;
-  border:1px solid var(--border);
-  background:rgba(0,0,0,.25);
-  color:var(--text);
-}
-
-/* ================= PLAYER ================= */
-.video{
-  width:100%;
-  border-radius:16px;
-  border:1px solid var(--border);
-  background:black;
-}
-
-.placeholder{
-  border:1px dashed rgba(255,255,255,.18);
-  border-radius:16px;
-  padding:18px;
-  color:var(--muted);
-  background:rgba(0,0,0,.18);
 }
 
 /* ================= SPINNER ================= */
@@ -207,3 +256,4 @@ select{
   animation:spin .8s linear infinite;
 }
 @keyframes spin{ to{ transform:rotate(360deg); } }
+
