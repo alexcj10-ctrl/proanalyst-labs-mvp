@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import "./App.css";
 
 const API_BASE = import.meta.env.VITE_API_URL;
+const DEBUG = import.meta.env.DEV;
 
 export default function App() {
   const [token, setToken] = useState(localStorage.getItem("token") || "");
@@ -113,14 +114,12 @@ export default function App() {
     }
   };
 
-  // On mount
   useEffect(() => {
     if (!token) return;
     loadCatalog(token).catch(() => logout());
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Own → Opp + Press
   useEffect(() => {
     if (!catalog || !own) return;
 
@@ -134,27 +133,10 @@ export default function App() {
     const nextPressList = catalog.press_by_pair?.[key] || [];
     setPressList(nextPressList);
 
-    const nextPress = nextPressList.includes(press)
-      ? press
-      : nextPressList[0] || "";
+    const nextPress = nextPressList[0] || "";
     if (nextPress !== press) setPress(nextPress);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [own, catalog]);
-
-  // Opp → Press
-  useEffect(() => {
-    if (!catalog || !own || !opp) return;
-
-    const key = `${own}|${opp}`;
-    const nextPressList = catalog.press_by_pair?.[key] || [];
-    setPressList(nextPressList);
-
-    const nextPress = nextPressList.includes(press)
-      ? press
-      : nextPressList[0] || "";
-    if (nextPress !== press) setPress(nextPress);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [opp, own, catalog]);
 
   const canGenerate = Boolean(isAuthed && own && opp && press);
 
@@ -175,7 +157,7 @@ export default function App() {
       });
 
       if (!res.ok) {
-        setMessage("Generate failed.");
+        setMessage("Generation failed.");
         return;
       }
 
@@ -187,7 +169,6 @@ export default function App() {
     }
   };
 
-  // Poll status
   useEffect(() => {
     if (!jobId || !token) return;
 
@@ -215,7 +196,7 @@ export default function App() {
         }
 
         if (data.status === "no_sequence") {
-          setMessage("No video exists for this combination.");
+          setMessage("This combination isn’t available yet.");
           clearInterval(intervalId);
         }
       } catch {}
@@ -230,14 +211,6 @@ export default function App() {
     };
   }, [jobId, token]);
 
-  const dotClass = useMemo(() => {
-    if (!status) return "dot";
-    if (status === "done") return "dot ok";
-    if (status === "queued" || status === "processing") return "dot warn";
-    if (status === "no_sequence") return "dot danger";
-    return "dot";
-  }, [status]);
-
   const showSpinner = status === "queued" || status === "processing";
 
   // ---------- LOGIN ----------
@@ -246,15 +219,13 @@ export default function App() {
       <div className="loginWrap">
         <div className="card loginCard">
           <div className="loginTitle">
-            <h2>ProAnalyst Labs</h2>
-            <span className="small">MVP</span>
+            <img src="/logo-proanalyst.png" alt="ProAnalyst Labs" className="logo" />
           </div>
 
-          <p className="small">Tactical Video Server · Secure Login</p>
+          <p className="small">Tactical Analysis · Secure Demo Login</p>
 
-          {/* 🔑 DEMO CREDENTIALS */}
           <div className="alert" style={{ marginTop: 12 }}>
-            <b>Demo credentials</b>
+            <b>Demo access</b>
             <br />
             User: <b>admin</b>
             <br />
@@ -268,7 +239,6 @@ export default function App() {
                 className="input"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                autoComplete="username"
               />
             </label>
 
@@ -281,15 +251,14 @@ export default function App() {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                autoComplete="current-password"
               />
             </label>
 
-            {loginError ? (
+            {loginError && (
               <div className="alert alertDanger" style={{ marginTop: 12 }}>
                 {loginError}
               </div>
-            ) : null}
+            )}
 
             <button
               className="btn btnPrimary"
@@ -299,13 +268,6 @@ export default function App() {
               Login
             </button>
           </form>
-        </div>
-
-        <div
-          className="small"
-          style={{ opacity: 0.7, marginTop: 16, textAlign: "center" }}
-        >
-          @proanalyst_labs 312 West Madison Street. Chicago , IL
         </div>
       </div>
     );
@@ -317,52 +279,32 @@ export default function App() {
       <div className="shell">
         <div className="topbar">
           <div className="brand">
-            <h1>ProAnalyst Labs</h1>
-            <p>MVP · Tactical Video Server</p>
+            <img src="/logo-proanalyst.png" alt="ProAnalyst Labs" className="logo" />
+            <span className="small">Tactical Video Generator</span>
           </div>
 
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-            <span className="badge" title={API_BASE}>
-              API: <b>{String(API_BASE || "").replace(/^https?:\/\//, "")}</b>
-            </span>
-            <button onClick={logout} className="btn">
-              Logout
-            </button>
-          </div>
+          <button onClick={logout} className="btn">
+            Logout
+          </button>
         </div>
 
         <div className="card">
           <div className="cardInner">
             <div className="grid">
               <label className="label">
-                <span>Own</span>
+                <span>Our shape</span>
                 <select value={own} onChange={(e) => setOwn(e.target.value)}>
                   {ownList.map((x) => (
-                    <option key={x} value={x}>
-                      {x}
-                    </option>
+                    <option key={x} value={x}>{x}</option>
                   ))}
                 </select>
               </label>
 
               <label className="label">
-                <span>Opp</span>
+                <span>Opponent shape</span>
                 <select value={opp} onChange={(e) => setOpp(e.target.value)}>
                   {oppList.map((x) => (
-                    <option key={x} value={x}>
-                      {x}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <label className="label">
-                <span>Press</span>
-                <select value={press} onChange={(e) => setPress(e.target.value)}>
-                  {pressList.map((x) => (
-                    <option key={x} value={x}>
-                      {x}
-                    </option>
+                    <option key={x} value={x}>{x}</option>
                   ))}
                 </select>
               </label>
@@ -372,80 +314,27 @@ export default function App() {
                 onClick={handleGenerate}
                 disabled={!canGenerate}
               >
-                {showSpinner ? (
-                  <span style={{ display: "inline-flex", gap: 8 }}>
-                    <span className="spinner" /> Generating
-                  </span>
-                ) : (
-                  "Generate"
-                )}
+                {showSpinner ? "Generating…" : "Generate clip"}
               </button>
             </div>
 
-            <div className="metaRow">
-              <span className="badge">
-                <span className={dotClass} /> Status:{" "}
-                <b>{status || "ready"}</b>
-              </span>
-              {jobId ? <span className="badge">Job: {jobId}</span> : null}
+            {message && <div className="alert alertDanger">{message}</div>}
+
+            <div className="card player">
+              {videoUrl ? (
+                <video key={videoUrl} src={videoUrl} controls className="video" />
+              ) : (
+                <div className="placeholder">
+                  Select a matchup and generate a tactical clip.
+                </div>
+              )}
             </div>
 
-            {message ? (
-              <div className="alert alertDanger">{message}</div>
-            ) : null}
-
-            <div className="split">
-              <div className="card player">
-                <div className="playerHeader">
-                  <b>Player</b>
-                  <span className="hint">Select a valid combo and generate.</span>
-                </div>
-
-                {videoUrl ? (
-                  <video
-                    key={videoUrl}
-                    src={videoUrl}
-                    controls
-                    className="video"
-                  />
-                ) : (
-                  <div className="placeholder">
-                    Select a combination and click <b>Generate</b>.
-                  </div>
-                )}
+            {DEBUG && (
+              <div className="small" style={{ opacity: 0.6, marginTop: 12 }}>
+                DEBUG · status: {status || "idle"} · job: {jobId || "-"}
               </div>
-
-              <div className="card player">
-                <div className="playerHeader">
-                  <b>Info</b>
-                  <span className="hint">Production build</span>
-                </div>
-
-                <div className="small" style={{ lineHeight: 1.6 }}>
-                  Catalog-driven UI (only valid combinations).
-                  <br />
-                  JWT auth · status polling · video playback.
-                  <br />
-                  <br />
-                  Connected to:
-                  <br />
-                  <b>{String(API_BASE || "")}</b>
-                </div>
-
-                <div style={{ marginTop: 12 }}>
-                  <span className="badge">
-                    <span className="dot ok" /> Production OK
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div
-              className="small"
-              style={{ opacity: 0.7, marginTop: 18, textAlign: "center" }}
-            >
-              @proanalyst_labs 312 West Madison Street. Chicago , IL
-            </div>
+            )}
           </div>
         </div>
       </div>
