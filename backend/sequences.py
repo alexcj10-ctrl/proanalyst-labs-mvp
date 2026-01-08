@@ -1,18 +1,17 @@
 from __future__ import annotations
 
 # Catalog determinista: solo se expone lo que exista en SEQUENCE_INDEX.
-# Dos "modos" para el mismo matchup: pizarra (whiteboard) y 3D.
+# Un único modo de visualización: 3D.
 
 OPTIONS = {
     "own": ["4-3-3"],
     "opp": ["4-3-3"],
-    # Reutilizamos "press" como selector de modo/visualización para NO tocar frontend.
-    "press": ["whiteboard", "3d"],
+    # Seguimos reutilizando "press" como selector técnico (aunque solo haya uno)
+    "press": ["3d"],
 }
 
 # Mapa exacto (own, opp, press) -> filename mp4 en backend/videos/
 SEQUENCE_INDEX = {
-    ("4-3-3", "4-3-3", "whiteboard"): "433vs433_1.mp4",
     ("4-3-3", "4-3-3", "3d"): "433vs433_1_3d.mp4",
 }
 
