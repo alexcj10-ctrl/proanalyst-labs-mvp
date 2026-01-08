@@ -114,12 +114,14 @@ export default function App() {
     }
   };
 
+  // On mount
   useEffect(() => {
     if (!token) return;
     loadCatalog(token).catch(() => logout());
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Own → Opp + Press
   useEffect(() => {
     if (!catalog || !own) return;
 
@@ -137,6 +139,19 @@ export default function App() {
     if (nextPress !== press) setPress(nextPress);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [own, catalog]);
+
+  // Opp → Press
+  useEffect(() => {
+    if (!catalog || !own || !opp) return;
+
+    const key = `${own}|${opp}`;
+    const nextPressList = catalog.press_by_pair?.[key] || [];
+    setPressList(nextPressList);
+
+    const nextPress = nextPressList[0] || "";
+    if (nextPress !== press) setPress(nextPress);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [opp, own, catalog]);
 
   const canGenerate = Boolean(isAuthed && own && opp && press);
 
@@ -169,6 +184,7 @@ export default function App() {
     }
   };
 
+  // Poll status
   useEffect(() => {
     if (!jobId || !token) return;
 
@@ -219,13 +235,23 @@ export default function App() {
       <div className="loginWrap">
         <div className="card loginCard">
           <div className="loginTitle">
-            <img src="/logo-proanalyst.png" alt="ProAnalyst Labs" className="logo" />
+            <div className="loginTitleLeft">
+              <img
+                src="/logo-proanalyst.png"
+                alt="ProAnalyst Labs"
+                className="logo"
+              />
+              <div>
+                <h2>ProAnalyst Labs</h2>
+                <span className="small">MVP</span>
+              </div>
+            </div>
           </div>
 
-          <p className="small">Tactical Analysis · Secure Demo Login</p>
+          <p className="small">Tactical Video Server · Secure Login</p>
 
           <div className="alert" style={{ marginTop: 12 }}>
-            <b>Demo access</b>
+            <b>Demo credentials</b>
             <br />
             User: <b>admin</b>
             <br />
@@ -239,6 +265,7 @@ export default function App() {
                 className="input"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
+                autoComplete="username"
               />
             </label>
 
@@ -251,14 +278,15 @@ export default function App() {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                autoComplete="current-password"
               />
             </label>
 
-            {loginError && (
+            {loginError ? (
               <div className="alert alertDanger" style={{ marginTop: 12 }}>
                 {loginError}
               </div>
-            )}
+            ) : null}
 
             <button
               className="btn btnPrimary"
@@ -279,8 +307,15 @@ export default function App() {
       <div className="shell">
         <div className="topbar">
           <div className="brand">
-            <img src="/logo-proanalyst.png" alt="ProAnalyst Labs" className="logo" />
-            <span className="small">Tactical Video Generator</span>
+            <img
+              src="/logo-proanalyst.png"
+              alt="ProAnalyst Labs"
+              className="logo"
+            />
+            <div className="brandText">
+              <div className="title">ProAnalyst Labs</div>
+              <div className="subtitle">MVP · Tactical Video Generator</div>
+            </div>
           </div>
 
           <button onClick={logout} className="btn">
@@ -295,7 +330,9 @@ export default function App() {
                 <span>Our shape</span>
                 <select value={own} onChange={(e) => setOwn(e.target.value)}>
                   {ownList.map((x) => (
-                    <option key={x} value={x}>{x}</option>
+                    <option key={x} value={x}>
+                      {x}
+                    </option>
                   ))}
                 </select>
               </label>
@@ -304,37 +341,65 @@ export default function App() {
                 <span>Opponent shape</span>
                 <select value={opp} onChange={(e) => setOpp(e.target.value)}>
                   {oppList.map((x) => (
-                    <option key={x} value={x}>{x}</option>
+                    <option key={x} value={x}>
+                      {x}
+                    </option>
                   ))}
                 </select>
               </label>
+
+              {/* Press solo si hay más de 1 opción */}
+              {pressList.length > 1 ? (
+                <label className="label">
+                  <span>Variant</span>
+                  <select
+                    value={press}
+                    onChange={(e) => setPress(e.target.value)}
+                  >
+                    {pressList.map((x) => (
+                      <option key={x} value={x}>
+                        {x}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ) : (
+                <div />
+              )}
 
               <button
                 className="btn btnPrimary"
                 onClick={handleGenerate}
                 disabled={!canGenerate}
               >
-                {showSpinner ? "Generating…" : "Generate clip"}
+                {showSpinner ? (
+                  <span style={{ display: "inline-flex", gap: 8 }}>
+                    <span className="spinner" /> Generating
+                  </span>
+                ) : (
+                  "Generate clip"
+                )}
               </button>
             </div>
 
-            {message && <div className="alert alertDanger">{message}</div>}
+            {message ? <div className="alert alertDanger">{message}</div> : null}
 
-            <div className="card player">
+            <div className="card player" style={{ marginTop: 14 }}>
               {videoUrl ? (
                 <video key={videoUrl} src={videoUrl} controls className="video" />
               ) : (
                 <div className="placeholder">
-                  Select a matchup and generate a tactical clip.
+                  Select a matchup and click <b>Generate clip</b>.
                 </div>
               )}
             </div>
 
-            {DEBUG && (
+            {DEBUG ? (
               <div className="small" style={{ opacity: 0.6, marginTop: 12 }}>
-                DEBUG · status: {status || "idle"} · job: {jobId || "-"}
+                DEBUG · status: {status || "idle"} · job: {jobId || "-"} · api:{" "}
+                {String(API_BASE || "")}
               </div>
-            )}
+            ) : null}
           </div>
         </div>
       </div>

@@ -26,12 +26,15 @@ body{
 
 a{ color:inherit; }
 
-/* ---------------- LOGO ---------------- */
+/* ---------------- LOGO (BLINDADO) ---------------- */
 .logo{
-  height: 32px;        /* ajusta 28–36px si quieres */
-  width: auto;
+  height: 34px;
+  max-height: 34px;
+  width: auto !important;
+  max-width: 180px;
   object-fit: contain;
   display: block;
+  flex: 0 0 auto;
 }
 
 /* ---------------- LAYOUT ---------------- */
@@ -53,20 +56,26 @@ a{ color:inherit; }
   padding: 10px 2px 18px;
 }
 
+/* En la app queremos logo + texto en fila (no en columna) */
 .brand{
   display:flex;
-  flex-direction:column;
-  gap:6px;
+  align-items:center;
+  gap:12px;
 }
-.brand h1{
+.brandText{
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+}
+.brandText .title{
   margin:0;
-  font-size:22px;
+  font-size:16px;
   letter-spacing:.2px;
 }
-.brand p{
+.brandText .subtitle{
   margin:0;
   color: var(--muted);
-  font-size:13px;
+  font-size:12px;
 }
 
 /* ---------------- BUTTONS ---------------- */
@@ -183,9 +192,7 @@ select:focus-visible{
 }
 
 .dot{
-  width:8px;
-  height:8px;
-  border-radius:50%;
+  width:8px;height:8px;border-radius:50%;
   background: rgba(255,255,255,.35);
 }
 .dot.ok{ background: var(--ok); }
@@ -207,31 +214,8 @@ select:focus-visible{
   background: rgba(239,68,68,.08);
 }
 
-/* ---------------- SPLIT ---------------- */
-.split{
-  display:grid;
-  grid-template-columns: 1.1fr .9fr;
-  gap:14px;
-  margin-top: 14px;
-}
-@media (max-width: 980px){
-  .split{ grid-template-columns: 1fr; }
-}
-
 /* ---------------- PLAYER ---------------- */
 .player{ padding: 16px; }
-
-.playerHeader{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  margin-bottom: 10px;
-  gap:12px;
-}
-.playerHeader .hint{
-  color: var(--muted);
-  font-size: 13px;
-}
 
 .video{
   width:100%;
@@ -270,18 +254,24 @@ select:focus-visible{
   margin-bottom: 8px;
 }
 
+.loginTitleLeft{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  min-width: 0;
+}
+
 .loginTitle h2{
   margin:0;
   font-size: 18px;
+  line-height: 1.1;
 }
 
-/* ---------------- TEXT ---------------- */
 .small{
   font-size: 12px;
   color: var(--muted);
 }
 
-/* ---------------- SPINNER ---------------- */
 .spinner{
   width: 14px;
   height: 14px;
@@ -290,7 +280,4 @@ select:focus-visible{
   border-top-color: rgba(255,255,255,.9);
   animation: spin .8s linear infinite;
 }
-
-@keyframes spin{
-  to{ transform: rotate(360deg); }
-}
+@keyframes spin { to{ transform: rotate(360deg); } }
