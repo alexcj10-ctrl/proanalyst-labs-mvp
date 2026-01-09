@@ -4,12 +4,14 @@ import os
 import time
 import uuid
 from datetime import datetime, timedelta
+from pathlib import Path
 from typing import Dict, Optional
 
 from fastapi import FastAPI, HTTPException, Depends, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi.staticfiles import StaticFiles
 
 from jose import jwt, JWTError
 
@@ -28,7 +30,9 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 24h
 DEMO_USER = os.getenv("DEMO_USER", "admin")
 DEMO_PASS = os.getenv("DEMO_PASS", "admin123")
 
-VIDEOS_DIR = os.path.join(os.path.dirname(__file__), "videos")
+# ✅ Ruta absoluta, robusta en Render
+BASE_DIR = Path(__file__).resolve().parent
+VIDEOS_DIR = BASE_DIR / "videos"
 
 # CORS: producción + local
 ALLOWED_ORIGINS = [
@@ -37,8 +41,6 @@ ALLOWED_ORIGINS = [
 ]
 
 # Permitir previews de Vercel SOLO de este proyecto
-# Ej:
-# https://proanalyst-labs-xxxxxx-alejandros-projects-xxxx.vercel.app
 VERCEL_PREVIEW_REGEX = r"^https:\/\/proanalyst-labs(-.*)?\.vercel\.app$"
 
 
@@ -58,6 +60,11 @@ app.add_middleware(
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
+# ✅ Static mount para poder testear vídeos directamente (opcional pero útil)
+# Esto NO rompe tu sistema determinista: solo expone ficheros estáticos.
+if VIDEOS_DIR.exists():
+    app.mount("/videos", StaticFiles(directory=str(VIDEOS_DIR)), name="videos")
+
 
 # --------------------
 # IN-MEMORY JOBS (MVP)
@@ -70,7 +77,9 @@ JOBS: Dict[str, Dict] = {}
 # --------------------
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
     to_encode = data.copy()
-    expire = datetime.utcnow() + (expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
+    expire = datetime.utcnow() + (
+        expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    )
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
@@ -174,8 +183,12 @@ def get_video(job_id: str, token: str = Query(...)):
     if not job or job["status"] != "done":
         raise HTTPException(status_code=404, detail="Video not ready")
 
-    path = os.path.join(VIDEOS_DIR, job["video"])
-    if not os.path.isfile(path):
-        raise HTTPException(status_code=404, detail="File not found")
+    # ✅ Ruta absoluta real en Render
+    path = VIDEOS_DIR / job["video"]
+    if not path.is_file():
+        raise HTTPException(
+            status_code=404,
+            detail=f"File not found: {path.name}",
+        )
 
-    return FileResponse(path, media_type="video/mp4")
+    return FileResponse(str(path), media_type="video/mp4")
