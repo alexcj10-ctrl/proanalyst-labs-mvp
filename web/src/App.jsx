@@ -296,11 +296,10 @@ export default function App() {
               Login
             </button>
 
-            {/* Restored brand footer (login) */}
             <div className="brandMeta">
               <div className="brandHandle">@proanalyst_labs</div>
               <div className="brandAddress">
-                Chicago, IL — (insert full address here)
+                312 West Madison Street · Chicago, IL
               </div>
             </div>
           </form>
@@ -356,7 +355,6 @@ export default function App() {
                 </select>
               </label>
 
-              {/* Press solo si hay más de 1 opción */}
               {pressList.length > 1 ? (
                 <label className="label">
                   <span>Variant</span>
@@ -402,12 +400,11 @@ export default function App() {
               )}
             </div>
 
-            {/* Restored brand footer (app) */}
             <footer className="appMeta">
               <span className="brandHandle">@proanalyst_labs</span>
               <span className="sep">•</span>
               <span className="brandAddress">
-                Chicago, IL — (insert full address here)
+                312 West Madison Street · Chicago, IL
               </span>
             </footer>
 
