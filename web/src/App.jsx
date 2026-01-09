@@ -295,6 +295,14 @@ export default function App() {
             >
               Login
             </button>
+
+            {/* Restored brand footer (login) */}
+            <div className="brandMeta">
+              <div className="brandHandle">@proanalyst_labs</div>
+              <div className="brandAddress">
+                Chicago, IL — (insert full address here)
+              </div>
+            </div>
           </form>
         </div>
       </div>
@@ -393,6 +401,15 @@ export default function App() {
                 </div>
               )}
             </div>
+
+            {/* Restored brand footer (app) */}
+            <footer className="appMeta">
+              <span className="brandHandle">@proanalyst_labs</span>
+              <span className="sep">•</span>
+              <span className="brandAddress">
+                Chicago, IL — (insert full address here)
+              </span>
+            </footer>
 
             {DEBUG ? (
               <div className="small" style={{ opacity: 0.6, marginTop: 12 }}>

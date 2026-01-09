@@ -240,6 +240,53 @@ select:focus-visible{
   font-size:22px;
 }
 
+/* Make login credentials (inputs) smaller + tighter */
+.loginCard .label span{
+  font-size:11px;
+  letter-spacing:.2px;
+  opacity:.9;
+}
+.loginCard .input{
+  font-size:14px;
+  padding:10px 12px;
+  border-radius:12px;
+}
+.loginCard .input::placeholder{
+  font-size:13px;
+  opacity:.65;
+}
+
+/* Restored brand meta (login + app) */
+.brandMeta{
+  margin-top:14px;
+  text-align:center;
+  opacity:.85;
+}
+.brandHandle{
+  font-size:12px;
+  letter-spacing:.3px;
+}
+.brandAddress{
+  margin-top:4px;
+  font-size:12px;
+  opacity:.75;
+}
+
+/* App footer meta */
+.appMeta{
+  margin-top:18px;
+  padding-top:12px;
+  display:flex;
+  gap:10px;
+  justify-content:center;
+  align-items:center;
+  opacity:.75;
+  font-size:12px;
+}
+.appMeta .sep{
+  opacity:.5;
+}
+
 /* ================= TEXT ================= */
 .small{
   font-size:12px;
@@ -256,4 +303,3 @@ select:focus-visible{
   animation:spin .8s linear infinite;
 }
 @keyframes spin{ to{ transform:rotate(360deg); } }
-
