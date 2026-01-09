@@ -250,12 +250,32 @@ export default function App() {
 
           <p className="small">Tactical Video Server · Secure Login</p>
 
-          <div className="alert" style={{ marginTop: 12 }}>
-            <b>Demo credentials</b>
-            <br />
-            User: <b>admin</b>
-            <br />
-            Password: <b>admin123</b>
+          {/* ✅ Demo credentials (smaller + centered + cleaner) */}
+          <div
+            className="alert"
+            style={{
+              marginTop: 12,
+              textAlign: "center",
+              fontSize: 12,
+              lineHeight: 1.35,
+              padding: "10px 12px",
+            }}
+          >
+            <div style={{ fontWeight: 700, marginBottom: 6, opacity: 0.95 }}>
+              Demo access
+            </div>
+
+            <div style={{ opacity: 0.85 }}>
+              <span style={{ fontWeight: 600 }}>User</span>{" "}
+              <span style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" }}>
+                admin
+              </span>
+              <span style={{ opacity: 0.6 }}> · </span>
+              <span style={{ fontWeight: 600 }}>Pass</span>{" "}
+              <span style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" }}>
+                admin123
+              </span>
+            </div>
           </div>
 
           <form onSubmit={handleLogin} style={{ marginTop: 14 }}>
