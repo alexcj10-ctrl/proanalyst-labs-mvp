@@ -5,7 +5,7 @@ from __future__ import annotations
 
 OPTIONS = {
     "own": ["4-3-3"],
-    "opp": ["4-3-3", "4-4-2", "3-5-2"],
+    "opp": ["4-3-3", "4-4-2", "3-4-3"],
     # Selector técnico único (no visible como modo visual)
     "press": ["default"],
 }
@@ -14,7 +14,7 @@ OPTIONS = {
 SEQUENCE_INDEX = {
     ("4-3-3", "4-3-3", "default"): "433vs433_A.mp4",
     ("4-3-3", "4-4-2", "default"): "433vs442_A.mp4",
-    ("4-3-3", "3-5-2", "default"): "433vs352_A.mp4",
+    ("4-3-3", "3-4-3", "default"): "433vs343_A.mp4",
 }
 
 
