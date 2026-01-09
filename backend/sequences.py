@@ -5,15 +5,16 @@ from __future__ import annotations
 
 OPTIONS = {
     "own": ["4-3-3"],
-    "opp": ["4-3-3", "3-5-2"],
+    "opp": ["4-3-3", "4-4-2", "3-5-2"],
     # Selector técnico único (no visible como modo visual)
     "press": ["default"],
 }
 
 # Mapa exacto (own, opp, press) -> filename mp4 en backend/videos/
 SEQUENCE_INDEX = {
-    ("4-3-3", "4-3-3", "default"): "433vs433_1_3d.mp4",
-    ("4-3-3", "3-5-2", "default"): "433vs352_1_3d.mp4",
+    ("4-3-3", "4-3-3", "default"): "433vs433_A.mp4",
+    ("4-3-3", "4-4-2", "default"): "433vs442_A.mp4",
+    ("4-3-3", "3-5-2", "default"): "433vs352_A.mp4",
 }
 
 
@@ -24,12 +25,14 @@ def build_catalog(sequence_index: dict) -> dict:
     press_by_pair = {}
 
     for (own, opp, press), video in sequence_index.items():
-        combos.append({
-            "own": own,
-            "opp": opp,
-            "press": press,
-            "video": video
-        })
+        combos.append(
+            {
+                "own": own,
+                "opp": opp,
+                "press": press,
+                "video": video,
+            }
+        )
         own_set.add(own)
         opp_by_own.setdefault(own, set()).add(opp)
         press_by_pair.setdefault(f"{own}|{opp}", set()).add(press)
