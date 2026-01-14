@@ -250,7 +250,6 @@ export default function App() {
 
           <p className="small">Tactical Video Server · Secure Login</p>
 
-          {/* ✅ Demo credentials (smaller + centered + cleaner) */}
           <div
             className="alert"
             style={{
@@ -430,7 +429,7 @@ export default function App() {
               )}
             </div>
 
-                        <footer className="appMeta">
+            <footer className="appMeta">
               <a
                 href="/ProAnalystLabs_Whitepaper.pdf"
                 target="_blank"
