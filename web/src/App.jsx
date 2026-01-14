@@ -430,7 +430,7 @@ export default function App() {
               )}
             </div>
 
-            <footer className="appMeta">
+                        <footer className="appMeta">
               <a
                 href="/ProAnalystLabs_Whitepaper.pdf"
                 target="_blank"
