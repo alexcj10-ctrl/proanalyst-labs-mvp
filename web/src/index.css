@@ -49,6 +49,40 @@ a:hover {
   background: rgba(124, 58, 237, 0.35);
 }
 
+/* -------------------------
+   Footer meta (whitepaper)
+-------------------------- */
+
+.appMeta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.appMeta .btn.btn-ghost {
+  padding: 8px 12px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.92);
+  text-decoration: none;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  transition: transform 0.15s ease, box-shadow 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.appMeta .btn.btn-ghost:hover {
+  transform: translateY(-1px);
+  border-color: rgba(124, 58, 237, 0.6);
+  box-shadow: 0 12px 40px rgba(124, 58, 237, 0.15),
+    0 10px 30px rgba(0, 0, 0, 0.35);
+}
+
 /* respeta reduced motion */
 @media (prefers-reduced-motion: reduce) {
   * {

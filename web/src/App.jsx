@@ -420,23 +420,26 @@ export default function App() {
               )}
             </div>
 
-            <footer className="appMeta">
-              <span className="brandHandle">@proanalyst_labs</span>
-              <span className="sep">•</span>
-              <span className="brandAddress">
-                312 West Madison Street · Chicago, IL
-              </span>
-            </footer>
+           <footer className="appMeta">
+  <a
+    href="/ProAnalystLabs_Whitepaper.pdf"
+    target="_blank"
+    rel="noreferrer"
+    className="btn btn-ghost"
+  >
+    Download Whitepaper (PDF)
+  </a>
 
-            {DEBUG ? (
-              <div className="small" style={{ opacity: 0.6, marginTop: 12 }}>
-                DEBUG · status: {status || "idle"} · job: {jobId || "-"} · api:{" "}
-                {String(API_BASE || "")}
-              </div>
-            ) : null}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
+  <span className="sep">•</span>
+  <span className="brandHandle">@proanalyst_labs</span>
+  <span className="sep">•</span>
+  <span className="brandAddress">312 West Madison Street · Chicago, IL</span>
+</footer>
+
+{DEBUG ? (
+  <div className="small" style={{ opacity: 0.6, marginTop: 12 }}>
+    DEBUG · status: {status || "idle"} · job: {jobId || "-"} · api:{" "}
+    {String(API_BASE || "")}
+  </div>
+) : null}
+
