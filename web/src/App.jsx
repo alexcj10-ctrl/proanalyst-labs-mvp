@@ -267,12 +267,22 @@ export default function App() {
 
             <div style={{ opacity: 0.85 }}>
               <span style={{ fontWeight: 600 }}>User</span>{" "}
-              <span style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" }}>
+              <span
+                style={{
+                  fontFamily:
+                    "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+                }}
+              >
                 admin
               </span>
               <span style={{ opacity: 0.6 }}> · </span>
               <span style={{ fontWeight: 600 }}>Pass</span>{" "}
-              <span style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" }}>
+              <span
+                style={{
+                  fontFamily:
+                    "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+                }}
+              >
                 admin123
               </span>
             </div>
@@ -420,26 +430,33 @@ export default function App() {
               )}
             </div>
 
-           <footer className="appMeta">
-  <a
-    href="/ProAnalystLabs_Whitepaper.pdf"
-    target="_blank"
-    rel="noreferrer"
-    className="btn btn-ghost"
-  >
-    Download Whitepaper (PDF)
-  </a>
+            <footer className="appMeta">
+              <a
+                href="/ProAnalystLabs_Whitepaper.pdf"
+                target="_blank"
+                rel="noreferrer"
+                className="btn btn-ghost"
+              >
+                Download Whitepaper (PDF)
+              </a>
 
-  <span className="sep">•</span>
-  <span className="brandHandle">@proanalyst_labs</span>
-  <span className="sep">•</span>
-  <span className="brandAddress">312 West Madison Street · Chicago, IL</span>
-</footer>
+              <span className="sep">•</span>
+              <span className="brandHandle">@proanalyst_labs</span>
+              <span className="sep">•</span>
+              <span className="brandAddress">
+                312 West Madison Street · Chicago, IL
+              </span>
+            </footer>
 
-{DEBUG ? (
-  <div className="small" style={{ opacity: 0.6, marginTop: 12 }}>
-    DEBUG · status: {status || "idle"} · job: {jobId || "-"} · api:{" "}
-    {String(API_BASE || "")}
-  </div>
-) : null}
-
+            {DEBUG ? (
+              <div className="small" style={{ opacity: 0.6, marginTop: 12 }}>
+                DEBUG · status: {status || "idle"} · job: {jobId || "-"} · api:{" "}
+                {String(API_BASE || "")}
+              </div>
+            ) : null}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

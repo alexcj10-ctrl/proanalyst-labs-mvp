@@ -410,3 +410,34 @@ body::after{
     radial-gradient(800px 400px at 50% -10%, rgba(124,58,237,.10), transparent 60%);
   z-index:-1;
 }
+
+/* ================= WHITEPAPER BUTTON (FOOTER) ================= */
+.btn.btn-ghost{
+  background: rgba(255,255,255,.03);
+  border: 1px solid rgba(255,255,255,.10);
+  padding: 8px 12px;
+  border-radius: 999px;
+  font-weight: 800;
+  letter-spacing: .2px;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow:
+    0 10px 30px rgba(124,58,237,.18),
+    inset 0 1px 0 rgba(255,255,255,.10);
+  transition: transform .08s ease, background .15s ease, border-color .15s ease, box-shadow .15s ease;
+}
+
+.btn.btn-ghost:hover{
+  background: rgba(255,255,255,.06);
+  border-color: rgba(124,58,237,.35);
+  transform: translateY(-1px);
+  box-shadow:
+    0 16px 45px rgba(124,58,237,.28),
+    inset 0 1px 0 rgba(255,255,255,.14);
+}
+
+.btn.btn-ghost:active{
+  transform: translateY(0px);
+}
