@@ -209,10 +209,15 @@ def get_status(job_id: str, user=Depends(get_current_user)):
         raise HTTPException(status_code=404, detail="Job not found")
 
     if job["status"] == "done":
+        # ✅ FIX CACHE: fingerprint del archivo -> URL siempre cambia si cambia el mp4
+        path = VIDEOS_DIR / job["video"]
+        st = path.stat()
+        file_ver = f"{int(st.st_mtime)}-{st.st_size}"
+
         return {
             "status": "done",
             "video": job["video"],
-            "video_url": f"/video/{job_id}?token={job['video_token']}&v={int(time.time())}",
+            "video_url": f"/video/{job_id}?token={job['video_token']}&file={file_ver}",
         }
 
     return {"status": job["status"]}
@@ -232,8 +237,9 @@ def get_video(job_id: str, token: str = Query(...)):
     if not path.is_file():
         raise HTTPException(status_code=404, detail=f"File not found: {path.name}")
 
-    # ✅ FileResponse soporta Range (206) -> el player funciona y evita “cargando infinito”
+    # ✅ FileResponse soporta Range (206) -> el player funciona bien
     headers = {
+        # “no-store” en teoría ya basta, pero así no hay discusión con proxies
         "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
         "Pragma": "no-cache",
         "Expires": "0",
