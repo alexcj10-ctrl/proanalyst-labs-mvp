@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import time
 import uuid
+import hashlib
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Dict, Optional
@@ -137,6 +138,26 @@ def debug_videos():
     return {"count": len(items), "files": items}
 
 
+@app.get("/debug/video-hash")
+def debug_video_hash(name: str):
+    path = VIDEOS_DIR / name
+    if not path.is_file():
+        raise HTTPException(status_code=404, detail=f"File not found: {name}")
+
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(1024 * 1024), b""):
+            h.update(chunk)
+
+    st = path.stat()
+    return {
+        "name": path.name,
+        "size": st.st_size,
+        "mtime": int(st.st_mtime),
+        "sha256": h.hexdigest(),
+    }
+
+
 # --------------------
 # AUTH
 # --------------------
@@ -209,7 +230,7 @@ def get_status(job_id: str, user=Depends(get_current_user)):
         raise HTTPException(status_code=404, detail="Job not found")
 
     if job["status"] == "done":
-        # ✅ FIX CACHE: fingerprint del archivo -> URL siempre cambia si cambia el mp4
+        # ✅ FIX CACHE: fingerprint del archivo -> URL cambia si cambia el mp4
         path = VIDEOS_DIR / job["video"]
         st = path.stat()
         file_ver = f"{int(st.st_mtime)}-{st.st_size}"
@@ -237,9 +258,7 @@ def get_video(job_id: str, token: str = Query(...)):
     if not path.is_file():
         raise HTTPException(status_code=404, detail=f"File not found: {path.name}")
 
-    # ✅ FileResponse soporta Range (206) -> el player funciona bien
     headers = {
-        # “no-store” en teoría ya basta, pero así no hay discusión con proxies
         "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
         "Pragma": "no-cache",
         "Expires": "0",
