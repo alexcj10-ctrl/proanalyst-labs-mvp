@@ -9,7 +9,7 @@ from typing import Dict, Optional
 
 from fastapi import FastAPI, HTTPException, Depends, Query
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
+from fastapi.responses import FileResponse
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.staticfiles import StaticFiles
 
@@ -30,17 +30,13 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 24h
 DEMO_USER = os.getenv("DEMO_USER", "admin")
 DEMO_PASS = os.getenv("DEMO_PASS", "admin123")
 
-# ✅ Ruta absoluta, robusta en Render
 BASE_DIR = Path(__file__).resolve().parent
 VIDEOS_DIR = BASE_DIR / "videos"
 
-# CORS: producción + local
 ALLOWED_ORIGINS = [
     "https://proanalyst-labs-mvp.vercel.app",
     "http://localhost:5173",
 ]
-
-# Permitir previews de Vercel SOLO de este proyecto
 VERCEL_PREVIEW_REGEX = r"^https:\/\/proanalyst-labs(-.*)?\.vercel\.app$"
 
 
@@ -58,9 +54,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login")
 
-# ✅ Static mount para testear vídeos directamente (opcional)
+# (Opcional) montar /videos si existe la carpeta (solo para debug manual)
 if VIDEOS_DIR.exists():
     app.mount("/videos", StaticFiles(directory=str(VIDEOS_DIR)), name="videos")
 
@@ -99,13 +95,51 @@ def get_current_user(token: str = Depends(oauth2_scheme)) -> dict:
 
 
 # --------------------
-# ENDPOINTS
+# HEALTH
 # --------------------
+@app.get("/")
+def root():
+    return {"status": "ok", "service": "ProAnalyst Labs API"}
+
+
 @app.get("/status/demo-001")
 def status_demo():
     return {"status": "ok", "service": "ProAnalyst Labs API"}
 
 
+# --------------------
+# DEBUG (para detectar “videos antiguos”)
+# --------------------
+@app.get("/debug/build")
+def debug_build():
+    return {
+        "render_git_commit": os.getenv("RENDER_GIT_COMMIT"),
+        "videos_dir": str(VIDEOS_DIR),
+        "videos_dir_exists": VIDEOS_DIR.exists(),
+    }
+
+
+@app.get("/debug/videos")
+def debug_videos():
+    if not VIDEOS_DIR.exists():
+        return {"error": "VIDEOS_DIR does not exist", "videos_dir": str(VIDEOS_DIR)}
+
+    items = []
+    for p in sorted(VIDEOS_DIR.glob("*.mp4")):
+        st = p.stat()
+        items.append(
+            {
+                "name": p.name,
+                "size": st.st_size,
+                "mtime": int(st.st_mtime),
+            }
+        )
+    return {"count": len(items), "files": items}
+
+
+# --------------------
+# AUTH
+# --------------------
 @app.post("/login")
 def login(form_data: OAuth2PasswordRequestForm = Depends()):
     if form_data.username != DEMO_USER or form_data.password != DEMO_PASS:
@@ -115,6 +149,9 @@ def login(form_data: OAuth2PasswordRequestForm = Depends()):
     return {"access_token": token, "token_type": "bearer"}
 
 
+# --------------------
+# API
+# --------------------
 @app.get("/options")
 def get_options(user=Depends(get_current_user)):
     return OPTIONS
@@ -139,12 +176,12 @@ def generate(payload: dict, user=Depends(get_current_user)):
 
     video_filename = SEQUENCE_INDEX.get(key)
 
-    # ❌ No existe combinación en el catálogo
+    # No existe combinación en el catálogo
     if not video_filename:
         JOBS[job_id] = {"status": "no_sequence"}
         return {"job_id": job_id}
 
-    # ❌ Existe combinación pero NO existe el archivo en disco
+    # Existe combinación pero no existe el archivo en disco
     path = VIDEOS_DIR / video_filename
     if not path.is_file():
         JOBS[job_id] = {"status": "no_sequence"}
@@ -172,7 +209,6 @@ def get_status(job_id: str, user=Depends(get_current_user)):
         raise HTTPException(status_code=404, detail="Job not found")
 
     if job["status"] == "done":
-        # ✅ Devolvemos también el filename real para depurar mapping
         return {
             "status": "done",
             "video": job["video"],
@@ -196,19 +232,15 @@ def get_video(job_id: str, token: str = Query(...)):
     if not path.is_file():
         raise HTTPException(status_code=404, detail=f"File not found: {path.name}")
 
-    # ✅ StreamingResponse (evita Range/206 y corta reutilización de chunks viejos)
-    def iterfile():
-        with open(path, "rb") as f:
-            while True:
-                chunk = f.read(1024 * 1024)  # 1MB
-                if not chunk:
-                    break
-                yield chunk
-
+    # ✅ FileResponse soporta Range (206) -> el player funciona y evita “cargando infinito”
     headers = {
         "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
         "Pragma": "no-cache",
         "Expires": "0",
     }
-
-    return StreamingResponse(iterfile(), media_type="video/mp4", headers=headers)
+    return FileResponse(
+        path=str(path),
+        media_type="video/mp4",
+        filename=path.name,
+        headers=headers,
+    )
