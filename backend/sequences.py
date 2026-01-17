@@ -5,9 +5,7 @@ from __future__ import annotations
 
 OPTIONS = {
     "own": ["4-3-3", "3-4-3", "4-4-2"],
-    # Actualizado a tus vídeos reales: ya no hay 3-4-3 como rival en el set nuevo
     "opp": ["4-3-3", "4-4-2", "3-5-2"],
-    # Selector técnico único (no visible como modo visual)
     "press": ["default"],
 }
 
@@ -20,9 +18,8 @@ SEQUENCE_INDEX = {
 
     # 3-4-3
     ("3-4-3", "4-3-3", "default"): "343vs433_A.mp4",
-    ("3-4-3", "4-4-2", "default"): "343vs442_A.mp4",
-    ("3-4-3", "3-5-2", "default"): "343vs352_A.mp4",
     ("3-4-3", "3-4-3", "default"): "343vs343_A.mp4",
+    ("3-4-3", "3-5-2", "default"): "343vs352_A.mp4",
 
     # 4-4-2
     ("4-4-2", "4-3-3", "default"): "442vs433_A.mp4",
