@@ -60,8 +60,7 @@ app.add_middleware(
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
-# ✅ Static mount para poder testear vídeos directamente (opcional pero útil)
-# Esto NO rompe tu sistema determinista: solo expone ficheros estáticos.
+# ✅ Static mount para testear vídeos directamente (opcional)
 if VIDEOS_DIR.exists():
     app.mount("/videos", StaticFiles(directory=str(VIDEOS_DIR)), name="videos")
 
@@ -123,7 +122,8 @@ def get_options(user=Depends(get_current_user)):
 
 @app.get("/catalog")
 def get_catalog(user=Depends(get_current_user)):
-    return build_catalog(SEQUENCE_INDEX)
+    # ✅ usa build_catalog() retrocompatible
+    return build_catalog()
 
 
 @app.post("/generate")
@@ -137,9 +137,17 @@ def generate(payload: dict, user=Depends(get_current_user)):
 
     job_id = str(uuid.uuid4())
     key = (own, opp, press)
+
     video_filename = SEQUENCE_INDEX.get(key)
 
+    # ❌ No existe combinación en el catálogo
     if not video_filename:
+        JOBS[job_id] = {"status": "no_sequence"}
+        return {"job_id": job_id}
+
+    # ❌ Existe la combinación pero NO existe el archivo en disco
+    path = VIDEOS_DIR / video_filename
+    if not path.is_file():
         JOBS[job_id] = {"status": "no_sequence"}
         return {"job_id": job_id}
 
@@ -183,12 +191,8 @@ def get_video(job_id: str, token: str = Query(...)):
     if not job or job["status"] != "done":
         raise HTTPException(status_code=404, detail="Video not ready")
 
-    # ✅ Ruta absoluta real en Render
     path = VIDEOS_DIR / job["video"]
     if not path.is_file():
-        raise HTTPException(
-            status_code=404,
-            detail=f"File not found: {path.name}",
-        )
+        raise HTTPException(status_code=404, detail=f"File not found: {path.name}")
 
     return FileResponse(str(path), media_type="video/mp4")

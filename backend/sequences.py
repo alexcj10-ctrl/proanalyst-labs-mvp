@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 # Catalog determinista: solo se expone lo que exista en SEQUENCE_INDEX.
-# Todos los vídeos son 3D. No se expone modo visual en la UX.
+# Todos los vídeos son 3D.
 
 OPTIONS = {
     "own": ["4-3-3", "3-4-3", "4-4-2"],
@@ -28,21 +28,21 @@ SEQUENCE_INDEX = {
 }
 
 
-def build_catalog(sequence_index: dict) -> dict:
+def build_catalog(sequence_index: dict | None = None) -> dict:
+    """
+    Retrocompatible:
+    - build_catalog()            -> usa SEQUENCE_INDEX
+    - build_catalog(SEQUENCE_INDEX) -> usa el dict pasado
+    """
+    idx = sequence_index or SEQUENCE_INDEX
+
     combos = []
     own_set = set()
-    opp_by_own = {}
-    press_by_pair = {}
+    opp_by_own: dict[str, set[str]] = {}
+    press_by_pair: dict[str, set[str]] = {}
 
-    for (own, opp, press), video in sequence_index.items():
-        combos.append(
-            {
-                "own": own,
-                "opp": opp,
-                "press": press,
-                "video": video,
-            }
-        )
+    for (own, opp, press), video in idx.items():
+        combos.append({"own": own, "opp": opp, "press": press, "video": video})
         own_set.add(own)
         opp_by_own.setdefault(own, set()).add(opp)
         press_by_pair.setdefault(f"{own}|{opp}", set()).add(press)
