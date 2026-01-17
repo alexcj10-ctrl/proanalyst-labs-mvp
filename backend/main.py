@@ -195,9 +195,10 @@ def get_video(job_id: str, token: str = Query(...)):
     if not path.is_file():
         raise HTTPException(status_code=404, detail=f"File not found: {path.name}")
 
-    # ✅ Anti-cache total (extra)
+    # ✅ Anti-cache total + disable ranges (clave para evitar chunks viejos con 206)
     response = FileResponse(str(path), media_type="video/mp4")
     response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
     response.headers["Pragma"] = "no-cache"
     response.headers["Expires"] = "0"
+    response.headers["Accept-Ranges"] = "none"
     return response
