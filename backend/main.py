@@ -171,12 +171,13 @@ def get_status(job_id: str, user=Depends(get_current_user)):
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
 
-    if job["status"] == "done":
-        # ✅ cache-bust: fuerza URL distinta para evitar que Chrome reutilice chunks viejos
-        return {
-            "status": "done",
-            "video_url": f"/video/{job_id}?token={job['video_token']}&v={int(time.time())}",
-        }
+   if job["status"] == "done":
+    return {
+        "status": "done",
+        "video": job["video"],
+        "video_url": f"/video/{job_id}?token={job['video_token']}&v={int(time.time())}",
+    }
+
 
     return {"status": job["status"]}
 
