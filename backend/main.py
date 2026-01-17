@@ -9,7 +9,7 @@ from typing import Dict, Optional
 
 from fastapi import FastAPI, HTTPException, Depends, Query
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.responses import StreamingResponse
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.staticfiles import StaticFiles
 
@@ -171,13 +171,13 @@ def get_status(job_id: str, user=Depends(get_current_user)):
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
 
-   if job["status"] == "done":
-    return {
-        "status": "done",
-        "video": job["video"],
-        "video_url": f"/video/{job_id}?token={job['video_token']}&v={int(time.time())}",
-    }
-
+    if job["status"] == "done":
+        # ✅ Devolvemos también el filename real para depurar mapping
+        return {
+            "status": "done",
+            "video": job["video"],
+            "video_url": f"/video/{job_id}?token={job['video_token']}&v={int(time.time())}",
+        }
 
     return {"status": job["status"]}
 
@@ -212,4 +212,3 @@ def get_video(job_id: str, token: str = Query(...)):
     }
 
     return StreamingResponse(iterfile(), media_type="video/mp4", headers=headers)
-
