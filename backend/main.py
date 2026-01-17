@@ -9,7 +9,7 @@ from typing import Dict, Optional
 
 from fastapi import FastAPI, HTTPException, Depends, Query
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.staticfiles import StaticFiles
 
@@ -195,10 +195,20 @@ def get_video(job_id: str, token: str = Query(...)):
     if not path.is_file():
         raise HTTPException(status_code=404, detail=f"File not found: {path.name}")
 
-    # ✅ Anti-cache total + disable ranges (clave para evitar chunks viejos con 206)
-    response = FileResponse(str(path), media_type="video/mp4")
-    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
-    response.headers["Pragma"] = "no-cache"
-    response.headers["Expires"] = "0"
-    response.headers["Accept-Ranges"] = "none"
-    return response
+    # ✅ StreamingResponse (evita Range/206 y corta reutilización de chunks viejos)
+    def iterfile():
+        with open(path, "rb") as f:
+            while True:
+                chunk = f.read(1024 * 1024)  # 1MB
+                if not chunk:
+                    break
+                yield chunk
+
+    headers = {
+        "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+        "Pragma": "no-cache",
+        "Expires": "0",
+    }
+
+    return StreamingResponse(iterfile(), media_type="video/mp4", headers=headers)
+
