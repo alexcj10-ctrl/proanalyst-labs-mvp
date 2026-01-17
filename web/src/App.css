@@ -280,8 +280,9 @@ select:focus-visible{
   gap:10px;
   justify-content:center;
   align-items:center;
-  opacity:.75;
+  opacity:.88;
   font-size:12px;
+  flex-wrap:wrap;
 }
 .appMeta .sep{
   opacity:.5;
@@ -412,32 +413,51 @@ body::after{
 }
 
 /* ================= WHITEPAPER BUTTON (FOOTER) ================= */
+/* Lo convertimos en CTA “prime” */
 .btn.btn-ghost{
-  background: rgba(255,255,255,.03);
-  border: 1px solid rgba(255,255,255,.10);
-  padding: 8px 12px;
+  background:
+    linear-gradient(135deg, rgba(124,58,237,1), rgba(59,130,246,.92));
+  border: 1px solid rgba(255,255,255,.18);
+  padding: 12px 16px;
   border-radius: 999px;
-  font-weight: 800;
-  letter-spacing: .2px;
+
+  font-weight: 900;
+  letter-spacing: .35px;
+  text-transform: uppercase;
+  font-size: 12px;
+
   text-decoration: none;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  justify-content: center;
+  gap: 10px;
+
   box-shadow:
-    0 10px 30px rgba(124,58,237,.18),
-    inset 0 1px 0 rgba(255,255,255,.10);
-  transition: transform .08s ease, background .15s ease, border-color .15s ease, box-shadow .15s ease;
+    0 18px 60px rgba(124,58,237,.42),
+    0 0 0 1px rgba(255,255,255,.10) inset;
+  transition: transform .10s ease, filter .15s ease, box-shadow .15s ease, border-color .15s ease;
+  animation: wpPulse 2.2s ease-in-out infinite;
 }
 
 .btn.btn-ghost:hover{
-  background: rgba(255,255,255,.06);
-  border-color: rgba(124,58,237,.35);
-  transform: translateY(-1px);
+  transform: translateY(-2px) scale(1.02);
+  filter: brightness(1.06);
+  border-color: rgba(255,255,255,.26);
   box-shadow:
-    0 16px 45px rgba(124,58,237,.28),
-    inset 0 1px 0 rgba(255,255,255,.14);
+    0 24px 85px rgba(124,58,237,.55),
+    0 0 0 1px rgba(255,255,255,.14) inset;
 }
 
 .btn.btn-ghost:active{
-  transform: translateY(0px);
+  transform: translateY(0px) scale(.99);
+}
+
+@keyframes wpPulse{
+  0%, 100% { box-shadow: 0 18px 60px rgba(124,58,237,.38), 0 0 0 1px rgba(255,255,255,.10) inset; }
+  50%      { box-shadow: 0 22px 75px rgba(124,58,237,.55), 0 0 0 1px rgba(255,255,255,.14) inset; }
+}
+
+/* Respeta reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .btn.btn-ghost{ animation:none !important; }
 }
