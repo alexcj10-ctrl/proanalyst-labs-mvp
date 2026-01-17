@@ -122,7 +122,6 @@ def get_options(user=Depends(get_current_user)):
 
 @app.get("/catalog")
 def get_catalog(user=Depends(get_current_user)):
-    # ✅ usa build_catalog() retrocompatible
     return build_catalog()
 
 
@@ -173,9 +172,10 @@ def get_status(job_id: str, user=Depends(get_current_user)):
         raise HTTPException(status_code=404, detail="Job not found")
 
     if job["status"] == "done":
+        # ✅ cache-bust: fuerza URL distinta para evitar que Chrome reutilice chunks viejos
         return {
             "status": "done",
-            "video_url": f"/video/{job_id}?token={job['video_token']}",
+            "video_url": f"/video/{job_id}?token={job['video_token']}&v={int(time.time())}",
         }
 
     return {"status": job["status"]}
@@ -195,7 +195,7 @@ def get_video(job_id: str, token: str = Query(...)):
     if not path.is_file():
         raise HTTPException(status_code=404, detail=f"File not found: {path.name}")
 
-    # ✅ Anti-cache total (clave para forzar vídeos nuevos aunque el filename sea el mismo)
+    # ✅ Anti-cache total (extra)
     response = FileResponse(str(path), media_type="video/mp4")
     response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
     response.headers["Pragma"] = "no-cache"
