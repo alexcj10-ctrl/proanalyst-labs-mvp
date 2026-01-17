@@ -145,7 +145,7 @@ def generate(payload: dict, user=Depends(get_current_user)):
         JOBS[job_id] = {"status": "no_sequence"}
         return {"job_id": job_id}
 
-    # ❌ Existe la combinación pero NO existe el archivo en disco
+    # ❌ Existe combinación pero NO existe el archivo en disco
     path = VIDEOS_DIR / video_filename
     if not path.is_file():
         JOBS[job_id] = {"status": "no_sequence"}
@@ -195,4 +195,9 @@ def get_video(job_id: str, token: str = Query(...)):
     if not path.is_file():
         raise HTTPException(status_code=404, detail=f"File not found: {path.name}")
 
-    return FileResponse(str(path), media_type="video/mp4")
+    # ✅ Anti-cache total (clave para forzar vídeos nuevos aunque el filename sea el mismo)
+    response = FileResponse(str(path), media_type="video/mp4")
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    return response
