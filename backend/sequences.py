@@ -28,20 +28,35 @@ SEQUENCE_INDEX = {
 }
 
 
+def _validate_index(idx: dict) -> None:
+    # Seguridad básica: solo filenames simples mp4 (sin rutas)
+    for key, video in idx.items():
+        if not isinstance(key, tuple) or len(key) != 3:
+            raise ValueError(f"Invalid key in SEQUENCE_INDEX: {key!r}")
+        if not isinstance(video, str):
+            raise ValueError(f"Invalid video value for {key!r}: {video!r}")
+        if "/" in video or "\\" in video or ".." in video:
+            raise ValueError(f"Unsafe video filename for {key!r}: {video!r}")
+        if not video.lower().endswith(".mp4"):
+            raise ValueError(f"Video must be .mp4 for {key!r}: {video!r}")
+
+
 def build_catalog(sequence_index: dict | None = None) -> dict:
     """
     Retrocompatible:
-    - build_catalog()            -> usa SEQUENCE_INDEX
+    - build_catalog()               -> usa SEQUENCE_INDEX
     - build_catalog(SEQUENCE_INDEX) -> usa el dict pasado
     """
     idx = sequence_index or SEQUENCE_INDEX
+    _validate_index(idx)
 
     combos = []
     own_set = set()
     opp_by_own: dict[str, set[str]] = {}
     press_by_pair: dict[str, set[str]] = {}
 
-    for (own, opp, press), video in idx.items():
+    # Orden estable
+    for (own, opp, press), video in sorted(idx.items(), key=lambda x: x[0]):
         combos.append({"own": own, "opp": opp, "press": press, "video": video})
         own_set.add(own)
         opp_by_own.setdefault(own, set()).add(opp)
