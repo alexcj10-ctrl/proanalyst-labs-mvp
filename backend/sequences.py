@@ -6,7 +6,7 @@ from __future__ import annotations
 OPTIONS = {
     "own": ["4-3-3", "3-4-3", "4-4-2", "4-2-3-1"],
     "opp": ["4-3-3", "4-4-2", "3-5-2", "4-3-1-2", "4-3-2-1"],
-    "press": ["default"],
+    "press": ["default", "variant_b"],
 }
 
 # Mapa exacto (own, opp, press) -> filename mp4 en backend/videos/
@@ -28,7 +28,11 @@ SEQUENCE_INDEX = {
 
     # 4-2-3-1
     ("4-2-3-1", "4-3-1-2", "default"): "4231vs4312_A.mp4",
-    ("4-2-3-1", "4-3-2-1", "default"): "4231vs4321_B.mp4",
+    ("4-2-3-1", "4-3-1-2", "variant_b"): "4231vs4312_B.mp4",
+
+    # (opzionale) se vuoi mantenere anche la variante vs 4-3-2-1 in futuro,
+    # reinseriscila con una press diversa (es. "vs4321") per non duplicare chiavi.
+    # ("4-2-3-1", "4-3-2-1", "vs4321"): "4231vs4321_B.mp4",
 }
 
 
