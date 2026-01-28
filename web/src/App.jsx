@@ -386,14 +386,14 @@ export default function App() {
 
               {pressList.length > 1 ? (
                 <label className="label">
-                  <span>Variant</span>
+                  <span>Solution</span>
                   <select
                     value={press}
                     onChange={(e) => setPress(e.target.value)}
                   >
                     {pressList.map((x) => (
                       <option key={x} value={x}>
-                        {x}
+                        {x === "A" ? "Solution A" : x === "B" ? "Solution B" : x}
                       </option>
                     ))}
                   </select>
