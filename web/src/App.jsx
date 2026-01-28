@@ -5,6 +5,9 @@ import "./App.css";
 const API_BASE = import.meta.env.VITE_API_URL;
 const DEBUG = import.meta.env.DEV;
 
+// If your PDF is in web/public/ this path will work:
+const WHITEPAPER_URL = "/ProAnalystLabs_Whitepaper.pdf";
+
 export default function App() {
   const [token, setToken] = useState(localStorage.getItem("token") || "");
   const isAuthed = Boolean(token);
@@ -256,22 +259,14 @@ export default function App() {
           <p className="small">Tactical Video Server · Secure Login</p>
 
           {/* Demo credentials (visible) */}
-          <div
-            className="card"
-            style={{
-              marginTop: 12,
-              padding: 12,
-            }}
-          >
+          <div className="card" style={{ marginTop: 12, padding: 12 }}>
             <div style={{ fontWeight: 700, marginBottom: 6 }}>Demo access</div>
             <div className="small" style={{ lineHeight: 1.5 }}>
               <div>
-                <span style={{ opacity: 0.8 }}>Username:</span>{" "}
-                <b>admin</b>
+                <span style={{ opacity: 0.8 }}>Username:</span> <b>admin</b>
               </div>
               <div>
-                <span style={{ opacity: 0.8 }}>Password:</span>{" "}
-                <b>admin123</b>
+                <span style={{ opacity: 0.8 }}>Password:</span> <b>admin123</b>
               </div>
             </div>
 
@@ -352,9 +347,22 @@ export default function App() {
             </div>
           </div>
 
-          <button onClick={logout} className="btn">
-            Logout
-          </button>
+          {/* Actions (top-right) */}
+          <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+            <a
+              className="btn"
+              href={WHITEPAPER_URL}
+              target="_blank"
+              rel="noreferrer"
+              title="Open Whitepaper (PDF)"
+            >
+              Whitepaper
+            </a>
+
+            <button onClick={logout} className="btn">
+              Logout
+            </button>
+          </div>
         </div>
 
         <div className="card">
@@ -437,6 +445,17 @@ export default function App() {
             </div>
           </div>
         </div>
+
+        {DEBUG ? (
+          <div className="small" style={{ marginTop: 12, opacity: 0.6 }}>
+            Status: <b>{status || "idle"}</b>{" "}
+            {jobId ? (
+              <>
+                · Job: <b>{jobId}</b>
+              </>
+            ) : null}
+          </div>
+        ) : null}
       </div>
     </div>
   );
