@@ -114,6 +114,13 @@ export default function App() {
     }
   };
 
+  // Quick helper to fill demo creds (UX)
+  const fillDemo = () => {
+    setUsername("admin");
+    setPassword("admin123");
+    setLoginError("");
+  };
+
   // On mount
   useEffect(() => {
     if (!token) return;
@@ -248,6 +255,37 @@ export default function App() {
 
           <p className="small">Tactical Video Server · Secure Login</p>
 
+          {/* Demo credentials (visible) */}
+          <div
+            className="card"
+            style={{
+              marginTop: 12,
+              padding: 12,
+            }}
+          >
+            <div style={{ fontWeight: 700, marginBottom: 6 }}>Demo access</div>
+            <div className="small" style={{ lineHeight: 1.5 }}>
+              <div>
+                <span style={{ opacity: 0.8 }}>Username:</span>{" "}
+                <b>admin</b>
+              </div>
+              <div>
+                <span style={{ opacity: 0.8 }}>Password:</span>{" "}
+                <b>admin123</b>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              className="btn"
+              style={{ marginTop: 10, width: "100%" }}
+              onClick={fillDemo}
+              title="Fill demo credentials"
+            >
+              Use demo credentials
+            </button>
+          </div>
+
           <form onSubmit={handleLogin} style={{ marginTop: 14 }}>
             <label className="label">
               <span>User</span>
@@ -255,6 +293,7 @@ export default function App() {
                 className="input"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
+                autoComplete="username"
               />
             </label>
 
@@ -267,6 +306,7 @@ export default function App() {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                autoComplete="current-password"
               />
             </label>
 
@@ -283,6 +323,12 @@ export default function App() {
             >
               Login
             </button>
+
+            {DEBUG ? (
+              <div className="small" style={{ marginTop: 10, opacity: 0.75 }}>
+                API: <b>{API_BASE}</b>
+              </div>
+            ) : null}
           </form>
         </div>
       </div>
@@ -318,7 +364,9 @@ export default function App() {
                 <span>Our shape</span>
                 <select value={own} onChange={(e) => setOwn(e.target.value)}>
                   {ownList.map((x) => (
-                    <option key={x} value={x}>{x}</option>
+                    <option key={x} value={x}>
+                      {x}
+                    </option>
                   ))}
                 </select>
               </label>
@@ -327,7 +375,9 @@ export default function App() {
                 <span>Opponent shape</span>
                 <select value={opp} onChange={(e) => setOpp(e.target.value)}>
                   {oppList.map((x) => (
-                    <option key={x} value={x}>{x}</option>
+                    <option key={x} value={x}>
+                      {x}
+                    </option>
                   ))}
                 </select>
               </label>
@@ -335,7 +385,10 @@ export default function App() {
               {pressList.length > 1 ? (
                 <label className="label">
                   <span>Solution</span>
-                  <select value={press} onChange={(e) => setPress(e.target.value)}>
+                  <select
+                    value={press}
+                    onChange={(e) => setPress(e.target.value)}
+                  >
                     {pressList.map((x) => (
                       <option key={x} value={x}>
                         {x === "A"
@@ -370,7 +423,12 @@ export default function App() {
 
             <div className="card player" style={{ marginTop: 14 }}>
               {videoUrl ? (
-                <video key={videoUrl} src={videoUrl} controls className="video" />
+                <video
+                  key={videoUrl}
+                  src={videoUrl}
+                  controls
+                  className="video"
+                />
               ) : (
                 <div className="placeholder">
                   Select a matchup and click <b>Generate clip</b>.
