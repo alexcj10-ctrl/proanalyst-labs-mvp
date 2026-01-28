@@ -13,7 +13,7 @@ export default function App() {
   const [token, setToken] = useState(localStorage.getItem("token") || "");
   const isAuthed = Boolean(token);
 
-  // intro transition (after login)
+  // intro splash
   const [showIntro, setShowIntro] = useState(false);
 
   // login
@@ -114,35 +114,34 @@ export default function App() {
       const data = await res.json();
       const jwt = data.access_token;
 
-      // Store token immediately (so refresh works), but show intro before loading app
       localStorage.setItem("token", jwt);
       setToken(jwt);
 
-      // Show intro splash
+      // Show splash intro
       setShowIntro(true);
 
-      // Load catalog during splash (better perceived performance)
+      // Load catalog while splash plays
       loadCatalog(jwt).catch(() => logout());
     } catch {
       setLoginError("Network error");
     }
   };
 
-  // Quick helper to fill demo creds (UX)
+  // autofill demo creds
   const fillDemo = () => {
     setUsername("admin");
     setPassword("admin123");
     setLoginError("");
   };
 
-  // On mount: if token exists, load catalog (no intro on refresh)
+  // load on refresh (no intro)
   useEffect(() => {
     if (!token) return;
     loadCatalog(token).catch(() => logout());
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Hide intro after exact duration
+  // hide splash after duration
   useEffect(() => {
     if (!showIntro) return;
     const t = setTimeout(() => setShowIntro(false), INTRO_DURATION_MS);
@@ -212,7 +211,7 @@ export default function App() {
     }
   };
 
-  // Poll status
+  // Poll job status
   useEffect(() => {
     if (!jobId || !token) return;
 
@@ -263,11 +262,7 @@ export default function App() {
       <div className="loginWrap">
         <div className="card loginCard">
           <div className="loginTitle">
-            <img
-              src="/logo-proanalyst.png"
-              alt="ProAnalyst Labs"
-              className="logo"
-            />
+            <img src="/logo-proanalyst.png" alt="ProAnalyst Labs" className="logo" />
             <div>
               <h2>ProAnalyst Labs</h2>
               <span className="small">MVP</span>
@@ -276,16 +271,11 @@ export default function App() {
 
           <p className="small">Tactical Video Server · Secure Login</p>
 
-          {/* Demo credentials (visible) */}
           <div className="card" style={{ marginTop: 12, padding: 12 }}>
             <div style={{ fontWeight: 700, marginBottom: 6 }}>Demo access</div>
-            <div className="small" style={{ lineHeight: 1.5 }}>
-              <div>
-                <span style={{ opacity: 0.8 }}>Username:</span> <b>admin</b>
-              </div>
-              <div>
-                <span style={{ opacity: 0.8 }}>Password:</span> <b>admin123</b>
-              </div>
+            <div className="small">
+              <div>Username: <b>admin</b></div>
+              <div>Password: <b>admin123</b></div>
             </div>
 
             <button
@@ -293,7 +283,6 @@ export default function App() {
               className="btn"
               style={{ marginTop: 10, width: "100%" }}
               onClick={fillDemo}
-              title="Fill demo credentials"
             >
               Use demo credentials
             </button>
@@ -306,7 +295,6 @@ export default function App() {
                 className="input"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                autoComplete="username"
               />
             </label>
 
@@ -319,15 +307,14 @@ export default function App() {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                autoComplete="current-password"
               />
             </label>
 
-            {loginError ? (
+            {loginError && (
               <div className="alert alertDanger" style={{ marginTop: 12 }}>
                 {loginError}
               </div>
-            ) : null}
+            )}
 
             <button
               className="btn btnPrimary"
@@ -337,11 +324,11 @@ export default function App() {
               Login
             </button>
 
-            {DEBUG ? (
+            {DEBUG && (
               <div className="small" style={{ marginTop: 10, opacity: 0.75 }}>
                 API: <b>{API_BASE}</b>
               </div>
-            ) : null}
+            )}
           </form>
         </div>
       </div>
@@ -361,32 +348,23 @@ export default function App() {
           padding: 24,
         }}
       >
-        <div
-          className="card"
-          style={{
-            width: "min(980px, 96vw)",
-            overflow: "hidden",
-            padding: 0,
-            animation: "fadeIn 260ms ease-out",
-          }}
-        >
+        <div className="card" style={{ width: "min(980px, 96vw)", padding: 0 }}>
           <video
             src={INTRO_VIDEO_URL}
             autoPlay
             muted
             playsInline
+            preload="auto"
             className="video"
-            style={{ width: "100%", height: "auto", display: "block" }}
+            style={{ width: "100%", display: "block" }}
+            onLoadedMetadata={(e) => {
+              try {
+                e.currentTarget.currentTime = 0.5;
+              } catch {}
+            }}
+            onError={() => setShowIntro(false)}
           />
         </div>
-
-        {/* Minimal inline keyframes (no CSS edits required) */}
-        <style>{`
-          @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(6px); }
-            to { opacity: 1; transform: translateY(0); }
-          }
-        `}</style>
       </div>
     );
   }
@@ -397,31 +375,23 @@ export default function App() {
       <div className="shell">
         <div className="topbar">
           <div className="brand">
-            <img
-              src="/logo-proanalyst.png"
-              alt="ProAnalyst Labs"
-              className="logo"
-            />
+            <img src="/logo-proanalyst.png" alt="ProAnalyst Labs" className="logo" />
             <div className="brandText">
               <div className="title">ProAnalyst Labs</div>
               <div className="subtitle">MVP · Tactical Video Generator</div>
             </div>
           </div>
 
-          <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+          <div style={{ display: "flex", gap: 10 }}>
             <a
               className="btn"
               href={WHITEPAPER_URL}
               target="_blank"
               rel="noreferrer"
-              title="Open Whitepaper (PDF)"
             >
               Whitepaper
             </a>
-
-            <button onClick={logout} className="btn">
-              Logout
-            </button>
+            <button onClick={logout} className="btn">Logout</button>
           </div>
         </div>
 
@@ -432,9 +402,7 @@ export default function App() {
                 <span>Our shape</span>
                 <select value={own} onChange={(e) => setOwn(e.target.value)}>
                   {ownList.map((x) => (
-                    <option key={x} value={x}>
-                      {x}
-                    </option>
+                    <option key={x} value={x}>{x}</option>
                   ))}
                 </select>
               </label>
@@ -443,33 +411,22 @@ export default function App() {
                 <span>Opponent shape</span>
                 <select value={opp} onChange={(e) => setOpp(e.target.value)}>
                   {oppList.map((x) => (
-                    <option key={x} value={x}>
-                      {x}
-                    </option>
+                    <option key={x} value={x}>{x}</option>
                   ))}
                 </select>
               </label>
 
-              {pressList.length > 1 ? (
+              {pressList.length > 1 && (
                 <label className="label">
                   <span>Solution</span>
-                  <select
-                    value={press}
-                    onChange={(e) => setPress(e.target.value)}
-                  >
+                  <select value={press} onChange={(e) => setPress(e.target.value)}>
                     {pressList.map((x) => (
                       <option key={x} value={x}>
-                        {x === "A"
-                          ? "Solution A · Option 1"
-                          : x === "B"
-                          ? "Solution B · Option 2"
-                          : x}
+                        {x === "A" ? "Solution A · Option 1" : "Solution B · Option 2"}
                       </option>
                     ))}
                   </select>
                 </label>
-              ) : (
-                <div />
               )}
 
               <button
@@ -477,26 +434,15 @@ export default function App() {
                 onClick={handleGenerate}
                 disabled={!canGenerate}
               >
-                {showSpinner ? (
-                  <span style={{ display: "inline-flex", gap: 8 }}>
-                    <span className="spinner" /> Generating
-                  </span>
-                ) : (
-                  "Generate clip"
-                )}
+                {showSpinner ? "Generating..." : "Generate clip"}
               </button>
             </div>
 
-            {message ? <div className="alert alertDanger">{message}</div> : null}
+            {message && <div className="alert alertDanger">{message}</div>}
 
             <div className="card player" style={{ marginTop: 14 }}>
               {videoUrl ? (
-                <video
-                  key={videoUrl}
-                  src={videoUrl}
-                  controls
-                  className="video"
-                />
+                <video src={videoUrl} controls className="video" />
               ) : (
                 <div className="placeholder">
                   Select a matchup and click <b>Generate clip</b>.
@@ -506,16 +452,11 @@ export default function App() {
           </div>
         </div>
 
-        {DEBUG ? (
+        {DEBUG && (
           <div className="small" style={{ marginTop: 12, opacity: 0.6 }}>
-            Status: <b>{status || "idle"}</b>{" "}
-            {jobId ? (
-              <>
-                · Job: <b>{jobId}</b>
-              </>
-            ) : null}
+            Status: <b>{status || "idle"}</b> {jobId && <>· Job: <b>{jobId}</b></>}
           </div>
-        ) : null}
+        )}
       </div>
     </div>
   );
