@@ -5,12 +5,16 @@ import "./App.css";
 const API_BASE = import.meta.env.VITE_API_URL;
 const DEBUG = import.meta.env.DEV;
 
-// If your PDF is in web/public/ this path will work:
 const WHITEPAPER_URL = "/ProAnalystLabs_Whitepaper.pdf";
+const INTRO_VIDEO_URL = "/intro.mp4";
+const INTRO_DURATION_MS = 7000;
 
 export default function App() {
   const [token, setToken] = useState(localStorage.getItem("token") || "");
   const isAuthed = Boolean(token);
+
+  // intro transition (after login)
+  const [showIntro, setShowIntro] = useState(false);
 
   // login
   const [username, setUsername] = useState("admin");
@@ -42,6 +46,7 @@ export default function App() {
   const logout = () => {
     localStorage.removeItem("token");
     setToken("");
+    setShowIntro(false);
     setCatalog(null);
     setOwnList([]);
     setOppList([]);
@@ -108,10 +113,16 @@ export default function App() {
 
       const data = await res.json();
       const jwt = data.access_token;
+
+      // Store token immediately (so refresh works), but show intro before loading app
       localStorage.setItem("token", jwt);
       setToken(jwt);
 
-      await loadCatalog(jwt);
+      // Show intro splash
+      setShowIntro(true);
+
+      // Load catalog during splash (better perceived performance)
+      loadCatalog(jwt).catch(() => logout());
     } catch {
       setLoginError("Network error");
     }
@@ -124,12 +135,19 @@ export default function App() {
     setLoginError("");
   };
 
-  // On mount
+  // On mount: if token exists, load catalog (no intro on refresh)
   useEffect(() => {
     if (!token) return;
     loadCatalog(token).catch(() => logout());
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Hide intro after exact duration
+  useEffect(() => {
+    if (!showIntro) return;
+    const t = setTimeout(() => setShowIntro(false), INTRO_DURATION_MS);
+    return () => clearTimeout(t);
+  }, [showIntro]);
 
   // Own → Opp + Press
   useEffect(() => {
@@ -330,6 +348,49 @@ export default function App() {
     );
   }
 
+  // ---------- INTRO SPLASH ----------
+  if (showIntro) {
+    return (
+      <div
+        className="wrap"
+        style={{
+          minHeight: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: 24,
+        }}
+      >
+        <div
+          className="card"
+          style={{
+            width: "min(980px, 96vw)",
+            overflow: "hidden",
+            padding: 0,
+            animation: "fadeIn 260ms ease-out",
+          }}
+        >
+          <video
+            src={INTRO_VIDEO_URL}
+            autoPlay
+            muted
+            playsInline
+            className="video"
+            style={{ width: "100%", height: "auto", display: "block" }}
+          />
+        </div>
+
+        {/* Minimal inline keyframes (no CSS edits required) */}
+        <style>{`
+          @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+          }
+        `}</style>
+      </div>
+    );
+  }
+
   // ---------- APP ----------
   return (
     <div className="wrap">
@@ -347,7 +408,6 @@ export default function App() {
             </div>
           </div>
 
-          {/* Actions (top-right) */}
           <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
             <a
               className="btn"
