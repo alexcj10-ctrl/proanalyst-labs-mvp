@@ -6,33 +6,48 @@ from __future__ import annotations
 OPTIONS = {
     "own": ["3-5-2", "4-3-3", "4-4-2"],
     "opp": ["3-5-2", "4-3-3", "4-4-2"],
-    # Más claro que "variant_b"
+    # Soluciones tácticas múltiples
     "press": ["A", "B"],
 }
 
 # Mapa exacto (own, opp, press) -> filename mp4 en backend/videos/
 SEQUENCE_INDEX = {
+
+    # =====================
     # 3-5-2
+    # =====================
     ("3-5-2", "3-5-2", "A"): "352vs352A.mp4",
     ("3-5-2", "3-5-2", "B"): "352vs352B.mp4",
+
     ("3-5-2", "4-3-3", "A"): "352vs433A.mp4",
     ("3-5-2", "4-3-3", "B"): "352vs433B.mp4",
+
     ("3-5-2", "4-4-2", "A"): "352vs442A.mp4",
     ("3-5-2", "4-4-2", "B"): "352vs442B.mp4",
 
+    # =====================
     # 4-3-3
+    # =====================
     ("4-3-3", "3-5-2", "A"): "433vs352A.mp4",
     ("4-3-3", "3-5-2", "B"): "433vs352B.mp4",
+
     ("4-3-3", "4-3-3", "A"): "433vs433A.mp4",
     ("4-3-3", "4-3-3", "B"): "433vs433B.mp4",
+
     ("4-3-3", "4-4-2", "A"): "433vs442A.mp4",
     ("4-3-3", "4-4-2", "B"): "433vs442B.mp4",
 
+    # =====================
     # 4-4-2
+    # =====================
     ("4-4-2", "3-5-2", "A"): "442vs352A.mp4",
     ("4-4-2", "3-5-2", "B"): "442vs352B.mp4",
+
     ("4-4-2", "4-3-3", "A"): "442vs433A.mp4",
     ("4-4-2", "4-3-3", "B"): "442vs433B.mp4",
+
+    ("4-4-2", "4-4-2", "A"): "442vs442A.mp4",
+    ("4-4-2", "4-4-2", "B"): "442vs442B.mp4",
 }
 
 
@@ -65,7 +80,12 @@ def build_catalog(sequence_index: dict | None = None) -> dict:
 
     # Orden estable
     for (own, opp, press), video in sorted(idx.items(), key=lambda x: x[0]):
-        combos.append({"own": own, "opp": opp, "press": press, "video": video})
+        combos.append({
+            "own": own,
+            "opp": opp,
+            "press": press,
+            "video": video
+        })
         own_set.add(own)
         opp_by_own.setdefault(own, set()).add(opp)
         press_by_pair.setdefault(f"{own}|{opp}", set()).add(press)
