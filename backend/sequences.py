@@ -1,38 +1,38 @@
 from __future__ import annotations
 
-# Catalog determinista: solo se expone lo que exista en SEQUENCE_INDEX.
-# Todos los vídeos son 3D.
+# Catálogo determinista: solo se expone lo que exista en SEQUENCE_INDEX.
+# Vídeos 3D. Nuevo catálogo: 3-5-2 / 4-3-3 / 4-4-2 con soluciones A/B.
 
 OPTIONS = {
-    "own": ["4-3-3", "3-4-3", "4-4-2", "4-2-3-1"],
-    "opp": ["4-3-3", "4-4-2", "3-5-2", "4-3-1-2", "4-3-2-1"],
-    "press": ["default", "variant_b"],
+    "own": ["3-5-2", "4-3-3", "4-4-2"],
+    "opp": ["3-5-2", "4-3-3", "4-4-2"],
+    # Más claro que "variant_b"
+    "press": ["A", "B"],
 }
 
 # Mapa exacto (own, opp, press) -> filename mp4 en backend/videos/
 SEQUENCE_INDEX = {
-    # 4-3-3
-    ("4-3-3", "4-3-3", "default"): "433vs433_A.mp4",
-    ("4-3-3", "4-4-2", "default"): "433vs442_A.mp4",
-    ("4-3-3", "3-5-2", "default"): "433vs352_A.mp4",
+    # 3-5-2
+    ("3-5-2", "3-5-2", "A"): "352vs352A.mp4",
+    ("3-5-2", "3-5-2", "B"): "352vs352B.mp4",
+    ("3-5-2", "4-3-3", "A"): "352vs433A.mp4",
+    ("3-5-2", "4-3-3", "B"): "352vs433B.mp4",
+    ("3-5-2", "4-4-2", "A"): "352vs442A.mp4",
+    ("3-5-2", "4-4-2", "B"): "352vs442B.mp4",
 
-    # 3-4-3
-    ("3-4-3", "4-3-3", "default"): "343vs433_A.mp4",
-    ("3-4-3", "3-4-3", "default"): "343vs343_A.mp4",
-    ("3-4-3", "3-5-2", "default"): "343vs352_A.mp4",
+    # 4-3-3
+    ("4-3-3", "3-5-2", "A"): "433vs352A.mp4",
+    ("4-3-3", "3-5-2", "B"): "433vs352B.mp4",
+    ("4-3-3", "4-3-3", "A"): "433vs433A.mp4",
+    ("4-3-3", "4-3-3", "B"): "433vs433B.mp4",
+    ("4-3-3", "4-4-2", "A"): "433vs442A.mp4",
+    ("4-3-3", "4-4-2", "B"): "433vs442B.mp4",
 
     # 4-4-2
-    ("4-4-2", "4-3-3", "default"): "442vs433_A.mp4",
-    ("4-4-2", "4-4-2", "default"): "442vs442_A.mp4",
-    ("4-4-2", "3-5-2", "default"): "442vs352_A.mp4",
-
-    # 4-2-3-1
-    ("4-2-3-1", "4-3-1-2", "default"): "4231vs4312_A.mp4",
-    ("4-2-3-1", "4-3-1-2", "variant_b"): "4231vs4312_B.mp4",
-
-    # (opzionale) se vuoi mantenere anche la variante vs 4-3-2-1 in futuro,
-    # reinseriscila con una press diversa (es. "vs4321") per non duplicare chiavi.
-    # ("4-2-3-1", "4-3-2-1", "vs4321"): "4231vs4321_B.mp4",
+    ("4-4-2", "3-5-2", "A"): "442vs352A.mp4",
+    ("4-4-2", "3-5-2", "B"): "442vs352B.mp4",
+    ("4-4-2", "4-3-3", "A"): "442vs433A.mp4",
+    ("4-4-2", "4-3-3", "B"): "442vs433B.mp4",
 }
 
 
