@@ -235,57 +235,18 @@ export default function App() {
       <div className="loginWrap">
         <div className="card loginCard">
           <div className="loginTitle">
-            <div className="loginTitleLeft">
-              <img
-                src="/logo-proanalyst.png"
-                alt="ProAnalyst Labs"
-                className="logo"
-              />
-              <div>
-                <h2>ProAnalyst Labs</h2>
-                <span className="small">MVP</span>
-              </div>
+            <img
+              src="/logo-proanalyst.png"
+              alt="ProAnalyst Labs"
+              className="logo"
+            />
+            <div>
+              <h2>ProAnalyst Labs</h2>
+              <span className="small">MVP</span>
             </div>
           </div>
 
           <p className="small">Tactical Video Server · Secure Login</p>
-
-          <div
-            className="alert"
-            style={{
-              marginTop: 12,
-              textAlign: "center",
-              fontSize: 12,
-              lineHeight: 1.35,
-              padding: "10px 12px",
-            }}
-          >
-            <div style={{ fontWeight: 700, marginBottom: 6, opacity: 0.95 }}>
-              Demo access
-            </div>
-
-            <div style={{ opacity: 0.85 }}>
-              <span style={{ fontWeight: 600 }}>User</span>{" "}
-              <span
-                style={{
-                  fontFamily:
-                    "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
-                }}
-              >
-                admin
-              </span>
-              <span style={{ opacity: 0.6 }}> · </span>
-              <span style={{ fontWeight: 600 }}>Pass</span>{" "}
-              <span
-                style={{
-                  fontFamily:
-                    "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
-                }}
-              >
-                admin123
-              </span>
-            </div>
-          </div>
 
           <form onSubmit={handleLogin} style={{ marginTop: 14 }}>
             <label className="label">
@@ -294,7 +255,6 @@ export default function App() {
                 className="input"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                autoComplete="username"
               />
             </label>
 
@@ -307,7 +267,6 @@ export default function App() {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                autoComplete="current-password"
               />
             </label>
 
@@ -324,13 +283,6 @@ export default function App() {
             >
               Login
             </button>
-
-            <div className="brandMeta">
-              <div className="brandHandle">@proanalyst_labs</div>
-              <div className="brandAddress">
-                312 West Madison Street · Chicago, IL
-              </div>
-            </div>
           </form>
         </div>
       </div>
@@ -366,9 +318,7 @@ export default function App() {
                 <span>Our shape</span>
                 <select value={own} onChange={(e) => setOwn(e.target.value)}>
                   {ownList.map((x) => (
-                    <option key={x} value={x}>
-                      {x}
-                    </option>
+                    <option key={x} value={x}>{x}</option>
                   ))}
                 </select>
               </label>
@@ -377,9 +327,7 @@ export default function App() {
                 <span>Opponent shape</span>
                 <select value={opp} onChange={(e) => setOpp(e.target.value)}>
                   {oppList.map((x) => (
-                    <option key={x} value={x}>
-                      {x}
-                    </option>
+                    <option key={x} value={x}>{x}</option>
                   ))}
                 </select>
               </label>
@@ -387,13 +335,14 @@ export default function App() {
               {pressList.length > 1 ? (
                 <label className="label">
                   <span>Solution</span>
-                  <select
-                    value={press}
-                    onChange={(e) => setPress(e.target.value)}
-                  >
+                  <select value={press} onChange={(e) => setPress(e.target.value)}>
                     {pressList.map((x) => (
                       <option key={x} value={x}>
-                        {x === "A" ? "Solution A" : x === "B" ? "Solution B" : x}
+                        {x === "A"
+                          ? "Solution A · Option 1"
+                          : x === "B"
+                          ? "Solution B · Option 2"
+                          : x}
                       </option>
                     ))}
                   </select>
@@ -428,31 +377,6 @@ export default function App() {
                 </div>
               )}
             </div>
-
-            <footer className="appMeta">
-              <a
-                href="/ProAnalystLabs_Whitepaper.pdf"
-                target="_blank"
-                rel="noreferrer"
-                className="btn btn-ghost"
-              >
-                Download Whitepaper (PDF)
-              </a>
-
-              <span className="sep">•</span>
-              <span className="brandHandle">@proanalyst_labs</span>
-              <span className="sep">•</span>
-              <span className="brandAddress">
-                312 West Madison Street · Chicago, IL
-              </span>
-            </footer>
-
-            {DEBUG ? (
-              <div className="small" style={{ opacity: 0.6, marginTop: 12 }}>
-                DEBUG · status: {status || "idle"} · job: {jobId || "-"} · api:{" "}
-                {String(API_BASE || "")}
-              </div>
-            ) : null}
           </div>
         </div>
       </div>
