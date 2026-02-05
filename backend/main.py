@@ -16,6 +16,10 @@ from fastapi.staticfiles import StaticFiles
 
 from jose import jwt, JWTError
 
+# sequences.py debe exponer:
+# - OPTIONS (idealmente incluyendo "phase")
+# - SEQUENCE_INDEX con claves (phase, own, opp, press)
+# - build_catalog() que ya separe por phase
 from sequences import OPTIONS, SEQUENCE_INDEX, build_catalog
 
 
@@ -175,16 +179,25 @@ def login(form_data: OAuth2PasswordRequestForm = Depends()):
 # --------------------
 @app.get("/options")
 def get_options(user=Depends(get_current_user)):
+    # OPTIONS idealmente incluye "phase": ["build_up","finishing"]
     return OPTIONS
 
 
 @app.get("/catalog")
 def get_catalog(user=Depends(get_current_user)):
+    # build_catalog() debe devolver el catálogo separado por phase
     return build_catalog()
 
 
 @app.post("/generate")
 def generate(payload: dict, user=Depends(get_current_user)):
+    """
+    NUEVO: phase (build_up/finishing) para no mezclar catálogos.
+    - Para mantener compatibilidad con el frontend viejo, si no viene phase:
+      asumimos build_up.
+    - Finalización exige phase=finishing desde el frontend nuevo.
+    """
+    phase = payload.get("phase") or "build_up"
     own = payload.get("own")
     opp = payload.get("opp")
     press = payload.get("press")
@@ -193,7 +206,9 @@ def generate(payload: dict, user=Depends(get_current_user)):
         raise HTTPException(status_code=400, detail="Missing fields")
 
     job_id = str(uuid.uuid4())
-    key = (own, opp, press)
+
+    # CLAVE NUEVA: (phase, own, opp, press)
+    key = (phase, own, opp, press)
 
     video_filename = SEQUENCE_INDEX.get(key)
 
@@ -216,6 +231,10 @@ def generate(payload: dict, user=Depends(get_current_user)):
     JOBS[job_id] = {
         "status": "done",
         "video": video_filename,
+        "phase": phase,
+        "own": own,
+        "opp": opp,
+        "press": press,
         "video_token": video_token,
         "created_at": time.time(),
     }
@@ -238,6 +257,7 @@ def get_status(job_id: str, user=Depends(get_current_user)):
         return {
             "status": "done",
             "video": job["video"],
+            "phase": job.get("phase", "build_up"),
             "video_url": f"/video/{job_id}?token={job['video_token']}&file={file_ver}",
         }
 
