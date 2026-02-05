@@ -23,11 +23,14 @@ export default function App() {
 
   // catalog
   const [catalog, setCatalog] = useState(null);
+
+  const [phaseList, setPhaseList] = useState([]);
   const [ownList, setOwnList] = useState([]);
   const [oppList, setOppList] = useState([]);
   const [pressList, setPressList] = useState([]);
 
   // selections
+  const [phase, setPhase] = useState("");
   const [own, setOwn] = useState("");
   const [opp, setOpp] = useState("");
   const [press, setPress] = useState("");
@@ -47,13 +50,18 @@ export default function App() {
     localStorage.removeItem("token");
     setToken("");
     setShowIntro(false);
+
     setCatalog(null);
+    setPhaseList([]);
     setOwnList([]);
     setOppList([]);
     setPressList([]);
+
+    setPhase("");
     setOwn("");
     setOpp("");
     setPress("");
+
     setJobId("");
     setStatus("");
     setVideoUrl("");
@@ -61,6 +69,9 @@ export default function App() {
     setLoginError("");
   };
 
+  // ---------------------------
+  // LOAD CATALOG (NEW STRUCTURE)
+  // ---------------------------
   const loadCatalog = async (jwt) => {
     const res = await fetch(`${API_BASE}/catalog`, {
       headers: { Authorization: `Bearer ${jwt}` },
@@ -70,26 +81,35 @@ export default function App() {
 
     setCatalog(data);
 
-    const ownArr = data.own || [];
+    const phases = data.phases || [];
+    setPhaseList(phases);
+
+    const defaultPhase = phases[0] || "";
+    setPhase(defaultPhase);
+
+    const ownArr = data.own_by_phase?.[defaultPhase] || [];
     setOwnList(ownArr);
 
     const defaultOwn = ownArr[0] || "";
     setOwn(defaultOwn);
 
-    const oppArr = data.opp_by_own?.[defaultOwn] || [];
+    const oppArr = data.opp_by_phase_own?.[defaultPhase]?.[defaultOwn] || [];
     setOppList(oppArr);
 
     const defaultOpp = oppArr[0] || "";
     setOpp(defaultOpp);
 
-    const key = `${defaultOwn}|${defaultOpp}`;
-    const pressArr = data.press_by_pair?.[key] || [];
+    const key = `${defaultPhase}|${defaultOwn}|${defaultOpp}`;
+    const pressArr = data.press_by_phase_pair?.[key] || [];
     setPressList(pressArr);
 
     const defaultPress = pressArr[0] || "";
     setPress(defaultPress);
   };
 
+  // ---------------------------
+  // LOGIN
+  // ---------------------------
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoginError("");
@@ -117,71 +137,90 @@ export default function App() {
       localStorage.setItem("token", jwt);
       setToken(jwt);
 
-      // Show splash intro
       setShowIntro(true);
 
-      // Load catalog while splash plays
       loadCatalog(jwt).catch(() => logout());
     } catch {
       setLoginError("Network error");
     }
   };
 
-  // autofill demo creds
   const fillDemo = () => {
     setUsername("admin");
     setPassword("admin123");
     setLoginError("");
   };
 
-  // load on refresh (no intro)
   useEffect(() => {
     if (!token) return;
     loadCatalog(token).catch(() => logout());
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line
   }, []);
 
-  // hide splash after duration
   useEffect(() => {
     if (!showIntro) return;
     const t = setTimeout(() => setShowIntro(false), INTRO_DURATION_MS);
     return () => clearTimeout(t);
   }, [showIntro]);
 
-  // Own → Opp + Press
+  // ---------------------------
+  // PHASE → OWN / OPP / PRESS
+  // ---------------------------
   useEffect(() => {
-    if (!catalog || !own) return;
+    if (!catalog || !phase) return;
 
-    const nextOppList = catalog.opp_by_own?.[own] || [];
-    setOppList(nextOppList);
+    const ownArr = catalog.own_by_phase?.[phase] || [];
+    setOwnList(ownArr);
 
-    const nextOpp = nextOppList.includes(opp) ? opp : nextOppList[0] || "";
+    const nextOwn = ownArr[0] || "";
+    setOwn(nextOwn);
+
+    const oppArr = catalog.opp_by_phase_own?.[phase]?.[nextOwn] || [];
+    setOppList(oppArr);
+
+    const nextOpp = oppArr[0] || "";
+    setOpp(nextOpp);
+
+    const key = `${phase}|${nextOwn}|${nextOpp}`;
+    const pressArr = catalog.press_by_phase_pair?.[key] || [];
+    setPressList(pressArr);
+
+    setPress(pressArr[0] || "");
+  }, [phase, catalog]);
+
+  // OWN → OPP + PRESS
+  useEffect(() => {
+    if (!catalog || !phase || !own) return;
+
+    const oppArr = catalog.opp_by_phase_own?.[phase]?.[own] || [];
+    setOppList(oppArr);
+
+    const nextOpp = oppArr.includes(opp) ? opp : oppArr[0] || "";
     if (nextOpp !== opp) setOpp(nextOpp);
 
-    const key = `${own}|${nextOpp}`;
-    const nextPressList = catalog.press_by_pair?.[key] || [];
-    setPressList(nextPressList);
+    const key = `${phase}|${own}|${nextOpp}`;
+    const pressArr = catalog.press_by_phase_pair?.[key] || [];
+    setPressList(pressArr);
 
-    const nextPress = nextPressList[0] || "";
-    if (nextPress !== press) setPress(nextPress);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [own, catalog]);
+    setPress(pressArr[0] || "");
+  }, [own, phase, catalog]);
 
-  // Opp → Press
+  // OPP → PRESS
   useEffect(() => {
-    if (!catalog || !own || !opp) return;
+    if (!catalog || !phase || !own || !opp) return;
 
-    const key = `${own}|${opp}`;
-    const nextPressList = catalog.press_by_pair?.[key] || [];
-    setPressList(nextPressList);
+    const key = `${phase}|${own}|${opp}`;
+    const pressArr = catalog.press_by_phase_pair?.[key] || [];
+    setPressList(pressArr);
 
-    const nextPress = nextPressList[0] || "";
-    if (nextPress !== press) setPress(nextPress);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [opp, own, catalog]);
+    setPress(pressArr[0] || "");
+  }, [opp, own, phase, catalog]);
 
-  const canGenerate = Boolean(isAuthed && own && opp && press);
+  const canGenerate = Boolean(isAuthed && phase && own && opp && press);
 
+  // ---------------------------
+  // GENERATE
+  // ---------------------------
   const handleGenerate = async () => {
     setMessage("");
     setVideoUrl("");
@@ -195,7 +234,7 @@ export default function App() {
           "Content-Type": "application/json",
           ...authHeaders,
         },
-        body: JSON.stringify({ own, opp, press }),
+        body: JSON.stringify({ phase, own, opp, press }),
       });
 
       if (!res.ok) {
@@ -211,7 +250,9 @@ export default function App() {
     }
   };
 
-  // Poll job status
+  // ---------------------------
+  // POLLING
+  // ---------------------------
   useEffect(() => {
     if (!jobId || !token) return;
 
@@ -262,7 +303,11 @@ export default function App() {
       <div className="loginWrap">
         <div className="card loginCard">
           <div className="loginTitle">
-            <img src="/logo-proanalyst.png" alt="ProAnalyst Labs" className="logo" />
+            <img
+              src="/logo-proanalyst.png"
+              alt="ProAnalyst Labs"
+              className="logo"
+            />
             <div>
               <h2>ProAnalyst Labs</h2>
               <span className="small">MVP</span>
@@ -274,8 +319,12 @@ export default function App() {
           <div className="card" style={{ marginTop: 12, padding: 12 }}>
             <div style={{ fontWeight: 700, marginBottom: 6 }}>Demo access</div>
             <div className="small">
-              <div>Username: <b>admin</b></div>
-              <div>Password: <b>admin123</b></div>
+              <div>
+                Username: <b>admin</b>
+              </div>
+              <div>
+                Password: <b>admin123</b>
+              </div>
             </div>
 
             <button
@@ -335,7 +384,7 @@ export default function App() {
     );
   }
 
-  // ---------- INTRO SPLASH ----------
+  // ---------- INTRO ----------
   if (showIntro) {
     return (
       <div
@@ -343,8 +392,8 @@ export default function App() {
         style={{
           minHeight: "100vh",
           display: "flex",
-          alignItems: "center",
           justifyContent: "center",
+          alignItems: "center",
           padding: 24,
         }}
       >
@@ -356,7 +405,6 @@ export default function App() {
             playsInline
             preload="auto"
             className="video"
-            style={{ width: "100%", display: "block" }}
             onLoadedMetadata={(e) => {
               try {
                 e.currentTarget.currentTime = 0.5;
@@ -375,7 +423,7 @@ export default function App() {
       <div className="shell">
         <div className="topbar">
           <div className="brand">
-            <img src="/logo-proanalyst.png" alt="ProAnalyst Labs" className="logo" />
+            <img src="/logo-proanalyst.png" className="logo" />
             <div className="brandText">
               <div className="title">ProAnalyst Labs</div>
               <div className="subtitle">MVP · Tactical Video Generator</div>
@@ -383,46 +431,94 @@ export default function App() {
           </div>
 
           <div style={{ display: "flex", gap: 10 }}>
-            <a
-              className="btn"
-              href={WHITEPAPER_URL}
-              target="_blank"
-              rel="noreferrer"
-            >
+            <a className="btn" href={WHITEPAPER_URL} target="_blank">
               Whitepaper
             </a>
-            <button onClick={logout} className="btn">Logout</button>
+            <button onClick={logout} className="btn">
+              Logout
+            </button>
           </div>
         </div>
 
         <div className="card">
           <div className="cardInner">
             <div className="grid">
+              {/* ✅ FIX: Make Phase select styled + always visible */}
+              <label className="label">
+                <span>Phase</span>
+                <select
+                  className="select"
+                  value={phase}
+                  onChange={(e) => setPhase(e.target.value)}
+                  disabled={phaseList.length === 0}
+                >
+                  {phaseList.length === 0 ? (
+                    <option value="">Loading...</option>
+                  ) : (
+                    phaseList.map((x) => (
+                      <option key={x} value={x}>
+                        {x === "build_up" ? "Build Up" : "Finishing"}
+                      </option>
+                    ))
+                  )}
+                </select>
+              </label>
+
               <label className="label">
                 <span>Our shape</span>
-                <select value={own} onChange={(e) => setOwn(e.target.value)}>
-                  {ownList.map((x) => (
-                    <option key={x} value={x}>{x}</option>
-                  ))}
+                <select
+                  className="select"
+                  value={own}
+                  onChange={(e) => setOwn(e.target.value)}
+                  disabled={ownList.length === 0}
+                >
+                  {ownList.length === 0 ? (
+                    <option value="">Loading...</option>
+                  ) : (
+                    ownList.map((x) => (
+                      <option key={x} value={x}>
+                        {x}
+                      </option>
+                    ))
+                  )}
                 </select>
               </label>
 
               <label className="label">
                 <span>Opponent shape</span>
-                <select value={opp} onChange={(e) => setOpp(e.target.value)}>
-                  {oppList.map((x) => (
-                    <option key={x} value={x}>{x}</option>
-                  ))}
+                <select
+                  className="select"
+                  value={opp}
+                  onChange={(e) => setOpp(e.target.value)}
+                  disabled={oppList.length === 0}
+                >
+                  {oppList.length === 0 ? (
+                    <option value="">Loading...</option>
+                  ) : (
+                    oppList.map((x) => (
+                      <option key={x} value={x}>
+                        {x}
+                      </option>
+                    ))
+                  )}
                 </select>
               </label>
 
-              {pressList.length > 1 && (
+              {pressList.length > 0 && (
                 <label className="label">
                   <span>Solution</span>
-                  <select value={press} onChange={(e) => setPress(e.target.value)}>
+                  <select
+                    className="select"
+                    value={press}
+                    onChange={(e) => setPress(e.target.value)}
+                  >
                     {pressList.map((x) => (
                       <option key={x} value={x}>
-                        {x === "A" ? "Solution A · Option 1" : "Solution B · Option 2"}
+                        {x === "A"
+                          ? "Solution A · Option 1"
+                          : x === "B"
+                          ? "Solution B · Option 2"
+                          : "Finishing pattern"}
                       </option>
                     ))}
                   </select>
@@ -445,7 +541,7 @@ export default function App() {
                 <video src={videoUrl} controls className="video" />
               ) : (
                 <div className="placeholder">
-                  Select a matchup and click <b>Generate clip</b>.
+                  Select a phase and matchup, then click <b>Generate clip</b>.
                 </div>
               )}
             </div>
@@ -454,7 +550,12 @@ export default function App() {
 
         {DEBUG && (
           <div className="small" style={{ marginTop: 12, opacity: 0.6 }}>
-            Status: <b>{status || "idle"}</b> {jobId && <>· Job: <b>{jobId}</b></>}
+            Status: <b>{status || "idle"}</b>{" "}
+            {jobId && (
+              <>
+                · Job: <b>{jobId}</b>
+              </>
+            )}
           </div>
         )}
       </div>
