@@ -55,6 +55,10 @@ SEQUENCE_INDEX = {
     ("finishing", "4-3-3", "4-3-3", "FA"): "433vs433FA.mp4",
     ("finishing", "3-4-3", "4-3-3", "FA"): "343vs433FA.mp4",
     ("finishing", "4-4-2", "4-3-3", "FA"): "442vs433FA.mp4",
+
+    # ✅ NEW FINISHING VIDEOS
+    ("finishing", "3-4-3", "3-5-2", "FA"): "343vs352FA.mp4",
+    ("finishing", "4-3-3", "5-4-1", "FA"): "433vs541FA.mp4",
 }
 
 
