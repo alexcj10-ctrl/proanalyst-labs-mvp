@@ -6,6 +6,11 @@ services:
       - "8000:8000"
     volumes:
       - ./backend:/app
+    environment:
+      SECRET_KEY: ${SECRET_KEY:-local-development-secret-change-me}
+      STAFF_USER: ${STAFF_USER:-admin}
+      STAFF_PASS: ${STAFF_PASS:-local-staff-only}
+      ENABLE_DEBUG_ENDPOINTS: ${ENABLE_DEBUG_ENDPOINTS:-true}
     command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 
   web:
@@ -15,6 +20,9 @@ services:
       - "5173:5173"
     volumes:
       - ./web:/app
+      - /app/node_modules
+    environment:
+      VITE_API_URL: http://localhost:8000
     depends_on:
       - backend
     command: npm run dev -- --host 0.0.0.0 --port 5173

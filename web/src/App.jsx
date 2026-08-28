@@ -1,46 +1,204 @@
-// web/src/App.jsx
 import { useEffect, useMemo, useState } from "react";
 import "./App.css";
 
-const API_BASE = import.meta.env.VITE_API_URL;
-const DEBUG = import.meta.env.DEV;
-
+const API_BASE = (import.meta.env.VITE_API_URL || (import.meta.env.DEV ? "http://localhost:8000" : "")).replace(/\/$/, "");
 const WHITEPAPER_URL = "/ProAnalystLabs_Whitepaper.pdf";
 const INTRO_VIDEO_URL = "/intro.mp4";
-const INTRO_DURATION_MS = 7000;
+const STORAGE_HISTORY = "proanalyst_history_v11";
+const STORAGE_FAVORITES = "proanalyst_favorites_v11";
+
+const PHASE_DESCRIPTIONS = {
+  build_up: "Create the conditions to escape the first pressure with control.",
+  progression: "Advance through or around the opponent's intermediate block.",
+  creation: "Create advantages around the final line before the decisive action.",
+  finishing: "Coordinate arrivals and occupation of the final third.",
+  defensive_org: "Organise distances, cover and pressure when defending the block.",
+  transition: "React and reorganise immediately after possession changes.",
+};
+
+const FORMATION_LINES = {
+  "3-4-2-1": [1, 3, 4, 2, 1],
+  "3-4-3": [1, 3, 4, 3],
+  "3-5-2": [1, 3, 5, 2],
+  "4-1-4-1": [1, 4, 1, 4, 1],
+  "4-2-3-1": [1, 4, 2, 3, 1],
+  "4-3-3": [1, 4, 3, 3],
+  "4-4-2": [1, 4, 4, 2],
+  "5-4-1": [1, 5, 4, 1],
+};
+
+function readStoredJson(key, fallback) {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function phaseLabel(value) {
+  const labels = {
+    build_up: "Build Up",
+    progression: "Progression",
+    creation: "Creation",
+    finishing: "Finishing",
+    defensive_org: "Defensive Organisation",
+    transition: "Transition",
+  };
+  return labels[value] || value?.replaceAll("_", " ") || "";
+}
+
+function FormationPitch({ formation, compact = false }) {
+  const lines = FORMATION_LINES[formation] || [1, 4, 3, 3];
+  return (
+    <div className={`miniPitch ${compact ? "miniPitchCompact" : ""}`} aria-hidden="true">
+      <div className="pitchHalfLine" />
+      <div className="pitchCircle" />
+      {lines.map((count, lineIndex) => (
+        <div className="formationLine" key={`${formation}-${lineIndex}`}>
+          {Array.from({ length: count }).map((_, dotIndex) => (
+            <span className="playerDot" key={`${lineIndex}-${dotIndex}`} />
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function FormationPicker({ label, value, formations, onChange, accent }) {
+  return (
+    <section className="selectorPanel">
+      <div className="sectionEyebrow">{label}</div>
+      <div className="formationGrid">
+        {formations.map((formation) => (
+          <button
+            key={formation}
+            type="button"
+            className={`formationCard ${value === formation ? "active" : ""} ${accent || ""}`}
+            onClick={() => onChange(formation)}
+            aria-pressed={value === formation}
+          >
+            <FormationPitch formation={formation} compact />
+            <span>{formation}</span>
+          </button>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function SolutionSummary({ solution, selected, onClick }) {
+  return (
+    <button
+      type="button"
+      className={`solutionChoice ${selected ? "selected" : ""}`}
+      onClick={onClick}
+    >
+      <div className="solutionChoiceTop">
+        <span className="solutionBadge">{solution.label}</span>
+        <span className="riskBadge">Risk · {solution.profile?.risk}</span>
+      </div>
+      <strong>{solution.title}</strong>
+      <p>{solution.objective}</p>
+      <div className="solutionMetrics">
+        <span>Verticality · {solution.profile?.verticality}</span>
+        <span>Tempo · {solution.profile?.tempo}</span>
+      </div>
+    </button>
+  );
+}
+
+function InfoList({ title, items, numbered = false }) {
+  if (!items?.length) return null;
+  const Tag = numbered ? "ol" : "ul";
+  return (
+    <div className="infoBlock">
+      <h4>{title}</h4>
+      <Tag>
+        {items.map((item) => (
+          <li key={item}>{item}</li>
+        ))}
+      </Tag>
+    </div>
+  );
+}
+
+function TacticalDetail({ solution }) {
+  if (!solution) return null;
+  return (
+    <div className="tacticalDetail">
+      <div className="detailHeader">
+        <div>
+          <div className="sectionEyebrow">Tactical solution</div>
+          <h2>{solution.title}</h2>
+          <p>{solution.objective}</p>
+        </div>
+        <div className="metricStack">
+          <span><small>Risk</small>{solution.profile?.risk}</span>
+          <span><small>Verticality</small>{solution.profile?.verticality}</span>
+          <span><small>Tempo</small>{solution.profile?.tempo}</span>
+        </div>
+      </div>
+
+      <div className="principleChips">
+        {solution.principles?.map((principle) => (
+          <span key={principle}>{principle}</span>
+        ))}
+      </div>
+
+      <div className="detailGrid">
+        <InfoList title="Key actions" items={solution.key_actions} numbered />
+        <InfoList title="Coaching points" items={solution.coaching_points} />
+        <InfoList title="Risk notes" items={solution.risk_notes} />
+      </div>
+    </div>
+  );
+}
+
+function EmptyState({ title, children }) {
+  return (
+    <div className="emptyState">
+      <div className="emptyIcon">PA</div>
+      <h3>{title}</h3>
+      <p>{children}</p>
+    </div>
+  );
+}
 
 export default function App() {
   const [token, setToken] = useState(localStorage.getItem("token") || "");
-  const isAuthed = Boolean(token);
-
-  // intro splash
+  const [catalog, setCatalog] = useState(null);
+  const [loadingCatalog, setLoadingCatalog] = useState(false);
+  const [authError, setAuthError] = useState("");
+  const [staffOpen, setStaffOpen] = useState(false);
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [showIntro, setShowIntro] = useState(false);
 
-  // login
-  const [username, setUsername] = useState("admin");
-  const [password, setPassword] = useState("admin123");
-  const [loginError, setLoginError] = useState("");
+  const [view, setView] = useState("analyze");
+  const [phase, setPhase] = useState("build_up");
+  const [own, setOwn] = useState("4-3-3");
+  const [opp, setOpp] = useState("4-2-3-1");
+  const [variant, setVariant] = useState("");
+  const [compareOpen, setCompareOpen] = useState(false);
 
-  // catalog
-  const [catalog, setCatalog] = useState(null);
-
-  const [phaseList, setPhaseList] = useState([]);
-  const [ownList, setOwnList] = useState([]);
-  const [oppList, setOppList] = useState([]);
-  const [pressList, setPressList] = useState([]);
-
-  // selections
-  const [phase, setPhase] = useState("");
-  const [own, setOwn] = useState("");
-  const [opp, setOpp] = useState("");
-  const [press, setPress] = useState("");
-
-  // job
   const [jobId, setJobId] = useState("");
-  const [status, setStatus] = useState("");
+  const [jobStatus, setJobStatus] = useState("");
   const [videoUrl, setVideoUrl] = useState("");
+  const [currentAnalysis, setCurrentAnalysis] = useState(null);
   const [message, setMessage] = useState("");
 
+  const [requestNote, setRequestNote] = useState("");
+  const [requestState, setRequestState] = useState("");
+  const [feedbackNote, setFeedbackNote] = useState("");
+  const [feedbackState, setFeedbackState] = useState("");
+
+  const [history, setHistory] = useState(() => readStoredJson(STORAGE_HISTORY, []));
+  const [favorites, setFavorites] = useState(() => readStoredJson(STORAGE_FAVORITES, []));
+  const [librarySearch, setLibrarySearch] = useState("");
+  const [libraryPhase, setLibraryPhase] = useState("all");
+
+  const isAuthed = Boolean(token);
   const authHeaders = useMemo(
     () => (token ? { Authorization: `Bearer ${token}` } : {}),
     [token]
@@ -49,516 +207,676 @@ export default function App() {
   const logout = () => {
     localStorage.removeItem("token");
     setToken("");
-    setShowIntro(false);
-
     setCatalog(null);
-    setPhaseList([]);
-    setOwnList([]);
-    setOppList([]);
-    setPressList([]);
-
-    setPhase("");
-    setOwn("");
-    setOpp("");
-    setPress("");
-
-    setJobId("");
-    setStatus("");
+    setCurrentAnalysis(null);
     setVideoUrl("");
-    setMessage("");
-    setLoginError("");
+    setJobId("");
+    setJobStatus("");
+    setShowIntro(false);
+    setAuthError("");
   };
 
-  // ---------------------------
-  // LOAD CATALOG (NEW STRUCTURE)
-  // ---------------------------
   const loadCatalog = async (jwt) => {
-    const res = await fetch(`${API_BASE}/catalog`, {
-      headers: { Authorization: `Bearer ${jwt}` },
-    });
-    if (!res.ok) throw new Error("Failed to load catalog");
-    const data = await res.json();
-
-    setCatalog(data);
-
-    const phases = data.phases || [];
-    setPhaseList(phases);
-
-    const defaultPhase = phases[0] || "";
-    setPhase(defaultPhase);
-
-    const ownArr = data.own_by_phase?.[defaultPhase] || [];
-    setOwnList(ownArr);
-
-    const defaultOwn = ownArr[0] || "";
-    setOwn(defaultOwn);
-
-    const oppArr = data.opp_by_phase_own?.[defaultPhase]?.[defaultOwn] || [];
-    setOppList(oppArr);
-
-    const defaultOpp = oppArr[0] || "";
-    setOpp(defaultOpp);
-
-    const key = `${defaultPhase}|${defaultOwn}|${defaultOpp}`;
-    const pressArr = data.press_by_phase_pair?.[key] || [];
-    setPressList(pressArr);
-
-    const defaultPress = pressArr[0] || "";
-    setPress(defaultPress);
-  };
-
-  // ---------------------------
-  // LOGIN
-  // ---------------------------
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    setLoginError("");
-    setMessage("");
-
+    setLoadingCatalog(true);
     try {
-      const body = new URLSearchParams();
-      body.append("username", username);
-      body.append("password", password);
-
-      const res = await fetch(`${API_BASE}/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: body.toString(),
+      const res = await fetch(`${API_BASE}/catalog`, {
+        headers: { Authorization: `Bearer ${jwt}` },
       });
-
-      if (!res.ok) {
-        setLoginError("Invalid credentials");
-        return;
-      }
-
+      if (res.status === 401) throw new Error("auth");
+      if (!res.ok) throw new Error("catalog");
       const data = await res.json();
-      const jwt = data.access_token;
+      setCatalog(data);
 
-      localStorage.setItem("token", jwt);
-      setToken(jwt);
-
-      setShowIntro(true);
-
-      loadCatalog(jwt).catch(() => logout());
-    } catch {
-      setLoginError("Network error");
+      const defaultPhase = data.phases?.includes("build_up") ? "build_up" : data.phases?.[0];
+      if (defaultPhase) setPhase((prev) => data.phases.includes(prev) ? prev : defaultPhase);
+      if (data.formations?.length) {
+        setOwn((prev) => data.formations.includes(prev) ? prev : data.formations[0]);
+        setOpp((prev) => data.formations.includes(prev) ? prev : data.formations[0]);
+      }
+    } finally {
+      setLoadingCatalog(false);
     }
   };
 
-  const fillDemo = () => {
-    setUsername("admin");
-    setPassword("admin123");
-    setLoginError("");
+  const completeAuth = async (jwt) => {
+    localStorage.setItem("token", jwt);
+    setToken(jwt);
+    await loadCatalog(jwt);
+    if (!sessionStorage.getItem("proanalyst_intro_seen")) setShowIntro(true);
+  };
+
+  const handleDemoLogin = async () => {
+    setAuthError("");
+    try {
+      const res = await fetch(`${API_BASE}/demo-login`, { method: "POST" });
+      if (!res.ok) throw new Error("demo");
+      const data = await res.json();
+      await completeAuth(data.access_token);
+    } catch {
+      setAuthError("Unable to connect to the ProAnalyst API. Check VITE_API_URL and the backend deployment.");
+    }
+  };
+
+  const handleStaffLogin = async (event) => {
+    event.preventDefault();
+    setAuthError("");
+    try {
+      const body = new URLSearchParams({ username, password });
+      const res = await fetch(`${API_BASE}/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body,
+      });
+      if (!res.ok) {
+        setAuthError("Invalid staff credentials.");
+        return;
+      }
+      const data = await res.json();
+      await completeAuth(data.access_token);
+    } catch {
+      setAuthError("Network error while signing in.");
+    }
   };
 
   useEffect(() => {
     if (!token) return;
-    loadCatalog(token).catch(() => logout());
-    // eslint-disable-next-line
+    loadCatalog(token).catch((error) => {
+      if (error?.message === "auth") logout();
+      else setMessage("The tactical catalog could not be loaded.");
+    });
+    // Only restore the session once at mount.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const closeIntro = () => {
+    sessionStorage.setItem("proanalyst_intro_seen", "1");
+    setShowIntro(false);
+  };
+
+  const availableSolutions = useMemo(() => {
+    if (!catalog) return [];
+    return catalog.combos.filter(
+      (combo) => combo.phase === phase && combo.own === own && combo.opp === opp
+    );
+  }, [catalog, phase, own, opp]);
+
   useEffect(() => {
-    if (!showIntro) return;
-    const t = setTimeout(() => setShowIntro(false), INTRO_DURATION_MS);
-    return () => clearTimeout(t);
-  }, [showIntro]);
+    const valid = availableSolutions.some((item) => item.variant === variant);
+    if (!valid) setVariant(availableSolutions[0]?.variant || "");
+  }, [availableSolutions, variant]);
 
-  // ---------------------------
-  // PHASE → OWN / OPP / PRESS
-  // ---------------------------
   useEffect(() => {
-    if (!catalog || !phase) return;
+    setCompareOpen(false);
+    setCurrentAnalysis(null);
+    setVideoUrl("");
+    setJobId("");
+    setJobStatus("");
+    setMessage("");
+    setRequestState("");
+    setFeedbackState("");
+    setFeedbackNote("");
+  }, [phase, own, opp]);
 
-    const ownArr = catalog.own_by_phase?.[phase] || [];
-    setOwnList(ownArr);
+  const saveHistory = (solution) => {
+    const entry = {
+      scenario_id: solution.scenario_id,
+      phase: solution.phase,
+      phase_label: solution.phase_label,
+      own: solution.own,
+      opp: solution.opp,
+      variant: solution.variant,
+      label: solution.label,
+      title: solution.title,
+      objective: solution.objective,
+      created_at: new Date().toISOString(),
+    };
+    setHistory((prev) => {
+      const next = [entry, ...prev.filter((item) => item.scenario_id !== entry.scenario_id)].slice(0, 24);
+      localStorage.setItem(STORAGE_HISTORY, JSON.stringify(next));
+      return next;
+    });
+  };
 
-    const nextOwn = ownArr[0] || "";
-    setOwn(nextOwn);
-
-    const oppArr = catalog.opp_by_phase_own?.[phase]?.[nextOwn] || [];
-    setOppList(oppArr);
-
-    const nextOpp = oppArr[0] || "";
-    setOpp(nextOpp);
-
-    const key = `${phase}|${nextOwn}|${nextOpp}`;
-    const pressArr = catalog.press_by_phase_pair?.[key] || [];
-    setPressList(pressArr);
-
-    setPress(pressArr[0] || "");
-  }, [phase, catalog]);
-
-  // OWN → OPP + PRESS
-  useEffect(() => {
-    if (!catalog || !phase || !own) return;
-
-    const oppArr = catalog.opp_by_phase_own?.[phase]?.[own] || [];
-    setOppList(oppArr);
-
-    const nextOpp = oppArr.includes(opp) ? opp : oppArr[0] || "";
-    if (nextOpp !== opp) setOpp(nextOpp);
-
-    const key = `${phase}|${own}|${nextOpp}`;
-    const pressArr = catalog.press_by_phase_pair?.[key] || [];
-    setPressList(pressArr);
-
-    setPress(pressArr[0] || "");
-  }, [own, phase, catalog]);
-
-  // OPP → PRESS
-  useEffect(() => {
-    if (!catalog || !phase || !own || !opp) return;
-
-    const key = `${phase}|${own}|${opp}`;
-    const pressArr = catalog.press_by_phase_pair?.[key] || [];
-    setPressList(pressArr);
-
-    setPress(pressArr[0] || "");
-  }, [opp, own, phase, catalog]);
-
-  const canGenerate = Boolean(isAuthed && phase && own && opp && press);
-
-  // ---------------------------
-  // GENERATE
-  // ---------------------------
-  const handleGenerate = async () => {
+  const handleAnalyze = async (requestedVariant = variant) => {
+    if (!requestedVariant) return;
     setMessage("");
     setVideoUrl("");
-    setStatus("");
-    setJobId("");
-
+    setCurrentAnalysis(null);
+    setJobStatus("queued");
+    setFeedbackState("");
     try {
       const res = await fetch(`${API_BASE}/generate`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...authHeaders,
-        },
-        body: JSON.stringify({ phase, own, opp, press }),
+        headers: { "Content-Type": "application/json", ...authHeaders },
+        body: JSON.stringify({ phase, own, opp, variant: requestedVariant }),
       });
-
-      if (!res.ok) {
-        setMessage("Generation failed.");
-        return;
-      }
-
+      if (res.status === 401) return logout();
+      if (!res.ok) throw new Error("generate");
       const data = await res.json();
+      setVariant(requestedVariant);
       setJobId(data.job_id);
-      setStatus("queued");
     } catch {
-      setMessage("Network error.");
+      setJobStatus("");
+      setMessage("The analysis could not be started. Check the API connection and try again.");
     }
   };
 
-  // ---------------------------
-  // POLLING
-  // ---------------------------
   useEffect(() => {
     if (!jobId || !token) return;
-
     let cancelled = false;
-    let intervalId = null;
+    let intervalId;
 
     const poll = async () => {
       try {
-        const res = await fetch(`${API_BASE}/status/${jobId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await fetch(`${API_BASE}/status/${jobId}`, { headers: authHeaders });
+        if (res.status === 401) return logout();
         if (!res.ok) return;
-
         const data = await res.json();
         if (cancelled) return;
-
-        setStatus(data.status);
+        setJobStatus(data.status);
 
         if (data.status === "done") {
-          const full = data.video_url.startsWith("http")
+          const fullVideoUrl = data.video_url.startsWith("http")
             ? data.video_url
             : `${API_BASE}${data.video_url}`;
-          setVideoUrl(full);
+          setVideoUrl(fullVideoUrl);
+          setCurrentAnalysis(data.solution);
+          saveHistory(data.solution);
+          clearInterval(intervalId);
+        } else if (data.status === "no_sequence") {
+          setMessage("This scenario is not available in the deterministic catalog yet.");
           clearInterval(intervalId);
         }
-
-        if (data.status === "no_sequence") {
-          setMessage("This combination isn’t available yet.");
-          clearInterval(intervalId);
-        }
-      } catch {}
+      } catch {
+        // Keep polling: short transient failures should not destroy the session.
+      }
     };
 
     poll();
-    intervalId = setInterval(poll, 1200);
-
+    intervalId = window.setInterval(poll, 1000);
     return () => {
       cancelled = true;
-      if (intervalId) clearInterval(intervalId);
+      window.clearInterval(intervalId);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [jobId, token]);
 
-  const showSpinner = status === "queued" || status === "processing";
+  const requestScenario = async () => {
+    setRequestState("sending");
+    try {
+      const res = await fetch(`${API_BASE}/scenario-requests`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeaders },
+        body: JSON.stringify({ phase, own, opp, note: requestNote }),
+      });
+      if (!res.ok) throw new Error("request");
+      setRequestState("sent");
+    } catch {
+      setRequestState("error");
+    }
+  };
 
-  // ---------- LOGIN ----------
+  const sendFeedback = async (useful) => {
+    if (!currentAnalysis) return;
+    setFeedbackState("sending");
+    try {
+      const res = await fetch(`${API_BASE}/feedback`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeaders },
+        body: JSON.stringify({
+          scenario_id: currentAnalysis.scenario_id,
+          useful,
+          note: feedbackNote,
+        }),
+      });
+      if (!res.ok) throw new Error("feedback");
+      setFeedbackState(useful ? "positive" : "negative");
+    } catch {
+      setFeedbackState("error");
+    }
+  };
+
+  const toggleFavorite = (scenarioId) => {
+    setFavorites((prev) => {
+      const next = prev.includes(scenarioId)
+        ? prev.filter((id) => id !== scenarioId)
+        : [...prev, scenarioId];
+      localStorage.setItem(STORAGE_FAVORITES, JSON.stringify(next));
+      return next;
+    });
+  };
+
+  const openScenario = (item) => {
+    setPhase(item.phase);
+    setOwn(item.own);
+    setOpp(item.opp);
+    setVariant(item.variant);
+    setView("analyze");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const libraryItems = useMemo(() => {
+    if (!catalog) return [];
+    const query = librarySearch.trim().toLowerCase();
+    return catalog.combos.filter((item) => {
+      const phaseMatch = libraryPhase === "all" || item.phase === libraryPhase;
+      const text = `${item.own} ${item.opp} ${item.title} ${item.objective} ${item.principles?.join(" ")}`.toLowerCase();
+      return phaseMatch && (!query || text.includes(query));
+    });
+  }, [catalog, libraryPhase, librarySearch]);
+
   if (!isAuthed) {
     return (
-      <div className="loginWrap">
-        <div className="card loginCard">
-          <div className="loginTitle">
-            <img
-              src="/logo-proanalyst.png"
-              alt="ProAnalyst Labs"
-              className="logo"
-            />
-            <div>
-              <h2>ProAnalyst Labs</h2>
-              <span className="small">MVP</span>
+      <main className="loginPage">
+        <section className="loginHero">
+          <div className="loginBrand">
+            <img src="/logo-proanalyst.png" alt="ProAnalyst Labs" />
+            <span>PROANALYST LABS</span>
+          </div>
+          <div className="heroCopy">
+            <div className="heroKicker">TACTICAL INTELLIGENCE PLATFORM</div>
+            <h1>Turn a tactical problem into a clear coaching solution.</h1>
+            <p>
+              Explore deterministic 3D scenarios, tactical principles and coaching points in one professional workspace.
+            </p>
+            <div className="heroStats">
+              <div><strong>24</strong><span>3D scenarios</span></div>
+              <div><strong>2</strong><span>active phases</span></div>
+              <div><strong>1</strong><span>decision workflow</span></div>
             </div>
           </div>
+        </section>
 
-          <p className="small">Tactical Video Server · Secure Login</p>
-
-          <div className="card" style={{ marginTop: 12, padding: 12 }}>
-            <div style={{ fontWeight: 700, marginBottom: 6 }}>Demo access</div>
-            <div className="small">
-              <div>
-                Username: <b>admin</b>
-              </div>
-              <div>
-                Password: <b>admin123</b>
-              </div>
-            </div>
-
-            <button
-              type="button"
-              className="btn"
-              style={{ marginTop: 10, width: "100%" }}
-              onClick={fillDemo}
-            >
-              Use demo credentials
+        <section className="loginPanel">
+          <div className="loginPanelInner">
+            <div className="versionPill">ProAnalyst v1.1</div>
+            <h2>Explore the platform</h2>
+            <p className="muted">No credentials required for the public demo.</p>
+            <button className="primaryButton large" type="button" onClick={handleDemoLogin}>
+              Enter Demo
+              <span>→</span>
             </button>
+
+            <button className="textButton" type="button" onClick={() => setStaffOpen((prev) => !prev)}>
+              {staffOpen ? "Hide staff access" : "Staff access"}
+            </button>
+
+            {staffOpen && (
+              <form className="staffForm" onSubmit={handleStaffLogin}>
+                <label>
+                  <span>User</span>
+                  <input value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="username" />
+                </label>
+                <label>
+                  <span>Password</span>
+                  <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" />
+                </label>
+                <button className="secondaryButton" type="submit">Sign in</button>
+              </form>
+            )}
+
+            {authError && <div className="errorNotice">{authError}</div>}
+            <div className="loginFoot">Secure API access · Protected tactical video delivery</div>
           </div>
-
-          <form onSubmit={handleLogin} style={{ marginTop: 14 }}>
-            <label className="label">
-              <span>User</span>
-              <input
-                className="input"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-              />
-            </label>
-
-            <div style={{ height: 12 }} />
-
-            <label className="label">
-              <span>Password</span>
-              <input
-                className="input"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </label>
-
-            {loginError && (
-              <div className="alert alertDanger" style={{ marginTop: 12 }}>
-                {loginError}
-              </div>
-            )}
-
-            <button
-              className="btn btnPrimary"
-              style={{ width: "100%", marginTop: 12 }}
-              type="submit"
-            >
-              Login
-            </button>
-
-            {DEBUG && (
-              <div className="small" style={{ marginTop: 10, opacity: 0.75 }}>
-                API: <b>{API_BASE}</b>
-              </div>
-            )}
-          </form>
-        </div>
-      </div>
+        </section>
+      </main>
     );
   }
 
-  // ---------- INTRO ----------
   if (showIntro) {
     return (
-      <div
-        className="wrap"
-        style={{
-          minHeight: "100vh",
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          padding: 24,
-        }}
-      >
-        <div className="card" style={{ width: "min(980px, 96vw)", padding: 0 }}>
-          <video
-            src={INTRO_VIDEO_URL}
-            autoPlay
-            muted
-            playsInline
-            preload="auto"
-            className="video"
-            onLoadedMetadata={(e) => {
-              try {
-                e.currentTarget.currentTime = 0.5;
-              } catch {}
-            }}
-            onError={() => setShowIntro(false)}
-          />
-        </div>
-      </div>
+      <main className="introScreen">
+        <video
+          src={INTRO_VIDEO_URL}
+          autoPlay
+          muted
+          playsInline
+          preload="auto"
+          onLoadedMetadata={(event) => {
+            try { event.currentTarget.currentTime = 0.5; } catch { /* no-op */ }
+          }}
+          onEnded={closeIntro}
+          onError={closeIntro}
+        />
+        <button className="introSkip" type="button" onClick={closeIntro}>Skip intro</button>
+      </main>
     );
   }
 
-  // ---------- APP ----------
-  return (
-    <div className="wrap">
-      <div className="shell">
-        <div className="topbar">
-          <div className="brand">
-            <img src="/logo-proanalyst.png" className="logo" />
-            <div className="brandText">
-              <div className="title">ProAnalyst Labs</div>
-              <div className="subtitle">MVP · Tactical Video Generator</div>
-            </div>
-          </div>
+  const formations = catalog?.formations || Object.keys(FORMATION_LINES);
+  const phaseRoadmap = catalog?.phase_roadmap || [];
+  const loading = loadingCatalog && !catalog;
 
-          <div style={{ display: "flex", gap: 10 }}>
-            <a className="btn" href={WHITEPAPER_URL} target="_blank">
-              Whitepaper
-            </a>
-            <button onClick={logout} className="btn">
-              Logout
-            </button>
-          </div>
+  return (
+    <div className="appFrame">
+      <aside className="sidebar">
+        <div className="sidebarBrand">
+          <img src="/logo-proanalyst.png" alt="" />
+          <div><strong>ProAnalyst</strong><span>Labs</span></div>
         </div>
 
-        <div className="card">
-          <div className="cardInner">
-            <div className="grid">
-              {/* ✅ FIX: Make Phase select styled + always visible */}
-              <label className="label">
-                <span>Phase</span>
-                <select
-                  className="select"
-                  value={phase}
-                  onChange={(e) => setPhase(e.target.value)}
-                  disabled={phaseList.length === 0}
-                >
-                  {phaseList.length === 0 ? (
-                    <option value="">Loading...</option>
-                  ) : (
-                    phaseList.map((x) => (
-                      <option key={x} value={x}>
-                        {x === "build_up" ? "Build Up" : "Finishing"}
-                      </option>
-                    ))
-                  )}
-                </select>
-              </label>
+        <nav className="sideNav" aria-label="Main navigation">
+          <button className={view === "analyze" ? "active" : ""} onClick={() => setView("analyze")}>
+            <span className="navIcon">⌁</span><span>Tactical Analysis</span>
+          </button>
+          <button className={view === "library" ? "active" : ""} onClick={() => setView("library")}>
+            <span className="navIcon">▦</span><span>Video Library</span>
+          </button>
+          <button className={view === "history" ? "active" : ""} onClick={() => setView("history")}>
+            <span className="navIcon">↺</span><span>My Analyses</span>
+          </button>
+          <button className={view === "methodology" ? "active" : ""} onClick={() => setView("methodology")}>
+            <span className="navIcon">◇</span><span>Club Methodology</span>
+          </button>
+        </nav>
 
-              <label className="label">
-                <span>Our shape</span>
-                <select
-                  className="select"
-                  value={own}
-                  onChange={(e) => setOwn(e.target.value)}
-                  disabled={ownList.length === 0}
-                >
-                  {ownList.length === 0 ? (
-                    <option value="">Loading...</option>
-                  ) : (
-                    ownList.map((x) => (
-                      <option key={x} value={x}>
-                        {x}
-                      </option>
-                    ))
-                  )}
-                </select>
-              </label>
+        <div className="sidebarGrow" />
+        <div className="developmentCard">
+          <span className="statusDot" />
+          <div><strong>Motor IA v1</strong><span>Architecture ready · next layer</span></div>
+        </div>
+        <a className="sidebarLink" href={WHITEPAPER_URL} target="_blank" rel="noreferrer">Whitepaper ↗</a>
+        <button className="sidebarLogout" type="button" onClick={logout}>Logout</button>
+      </aside>
 
-              <label className="label">
-                <span>Opponent shape</span>
-                <select
-                  className="select"
-                  value={opp}
-                  onChange={(e) => setOpp(e.target.value)}
-                  disabled={oppList.length === 0}
-                >
-                  {oppList.length === 0 ? (
-                    <option value="">Loading...</option>
-                  ) : (
-                    oppList.map((x) => (
-                      <option key={x} value={x}>
-                        {x}
-                      </option>
-                    ))
-                  )}
-                </select>
-              </label>
+      <div className="mobileBar">
+        <div className="sidebarBrand"><img src="/logo-proanalyst.png" alt="" /><strong>ProAnalyst Labs</strong></div>
+        <select value={view} onChange={(e) => setView(e.target.value)} aria-label="Section">
+          <option value="analyze">Tactical Analysis</option>
+          <option value="library">Video Library</option>
+          <option value="history">My Analyses</option>
+          <option value="methodology">Club Methodology</option>
+        </select>
+      </div>
 
-              {pressList.length > 0 && (
-                <label className="label">
-                  <span>Solution</span>
-                  <select
-                    className="select"
-                    value={press}
-                    onChange={(e) => setPress(e.target.value)}
+      <main className="mainWorkspace">
+        {loading ? (
+          <div className="loadingScreen"><span className="spinner" /> Loading tactical catalog…</div>
+        ) : null}
+
+        {!loading && view === "analyze" && (
+          <>
+            <header className="workspaceHeader">
+              <div>
+                <div className="sectionEyebrow">DECISION WORKSPACE</div>
+                <h1>Tactical Analysis</h1>
+                <p>Start from the football problem. ProAnalyst connects the scenario to the available tactical solution.</p>
+              </div>
+              <div className="catalogCounter"><strong>{catalog?.combos?.length || 0}</strong><span>validated video scenarios</span></div>
+            </header>
+
+            <section className="workspaceSection">
+              <div className="sectionTitleRow">
+                <div><span>01</span><h2>Choose the game phase</h2></div>
+                <p>Only phases with validated content are active today.</p>
+              </div>
+              <div className="phaseGrid">
+                {phaseRoadmap.map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    className={`phaseCard ${phase === item.id ? "active" : ""} ${!item.available ? "locked" : ""}`}
+                    disabled={!item.available}
+                    onClick={() => setPhase(item.id)}
                   >
-                    {pressList.map((x) => (
-                      <option key={x} value={x}>
-                        {x === "A"
-                          ? "Solution A · Option 1"
-                          : x === "B"
-                          ? "Solution B · Option 2"
-                          : "Finishing pattern"}
-                      </option>
+                    <div className="phaseTop"><span>{item.label}</span>{!item.available && <small>Coming soon</small>}</div>
+                    <p>{PHASE_DESCRIPTIONS[item.id]}</p>
+                  </button>
+                ))}
+              </div>
+            </section>
+
+            <section className="workspaceSection">
+              <div className="sectionTitleRow">
+                <div><span>02</span><h2>Define the matchup</h2></div>
+                <p>Choose the structures exactly as the staff sees them on the pitch.</p>
+              </div>
+              <div className="matchupGrid">
+                <FormationPicker label="Our shape" value={own} formations={formations} onChange={setOwn} accent="ownAccent" />
+                <div className="versusMark"><span>VS</span></div>
+                <FormationPicker label="Opponent shape" value={opp} formations={formations} onChange={setOpp} accent="oppAccent" />
+              </div>
+            </section>
+
+            <section className="workspaceSection">
+              <div className="sectionTitleRow">
+                <div><span>03</span><h2>Choose the tactical solution</h2></div>
+                <p>{phaseLabel(phase)} · {own} vs {opp}</p>
+              </div>
+
+              {availableSolutions.length ? (
+                <>
+                  <div className="solutionsGrid">
+                    {availableSolutions.map((solution) => (
+                      <SolutionSummary
+                        key={solution.scenario_id}
+                        solution={solution}
+                        selected={solution.variant === variant}
+                        onClick={() => {
+                          setVariant(solution.variant);
+                          setCurrentAnalysis(null);
+                          setVideoUrl("");
+                          setJobId("");
+                          setJobStatus("");
+                          setMessage("");
+                        }}
+                      />
                     ))}
-                  </select>
-                </label>
-              )}
+                  </div>
+                  <div className="actionRow">
+                    <button
+                      className="primaryButton"
+                      type="button"
+                      onClick={() => handleAnalyze(variant)}
+                      disabled={!variant || jobStatus === "queued" || jobStatus === "processing"}
+                    >
+                      {jobStatus === "queued" || jobStatus === "processing" ? <><span className="spinner" /> Analysing…</> : <>Analyse Scenario <span>→</span></>}
+                    </button>
+                    {availableSolutions.length > 1 && (
+                      <button className="secondaryButton" type="button" onClick={() => setCompareOpen((prev) => !prev)}>
+                        {compareOpen ? "Close comparison" : "Compare solutions"}
+                      </button>
+                    )}
+                  </div>
 
-              <button
-                className="btn btnPrimary"
-                onClick={handleGenerate}
-                disabled={!canGenerate}
-              >
-                {showSpinner ? "Generating..." : "Generate clip"}
-              </button>
-            </div>
-
-            {message && <div className="alert alertDanger">{message}</div>}
-
-            <div className="card player" style={{ marginTop: 14 }}>
-              {videoUrl ? (
-                <video src={videoUrl} controls className="video" />
+                  {compareOpen && (
+                    <div className="comparisonPanel">
+                      <div className="comparisonHeader"><span>Solution comparison</span><small>Use this before choosing what to show the staff.</small></div>
+                      <div className="comparisonGrid">
+                        {availableSolutions.map((solution) => (
+                          <div className="comparisonCard" key={solution.scenario_id}>
+                            <div className="solutionChoiceTop"><span className="solutionBadge">{solution.label}</span><span>{solution.profile?.risk} risk</span></div>
+                            <h3>{solution.title}</h3>
+                            <p>{solution.objective}</p>
+                            <InfoList title="Core principles" items={solution.principles?.slice(0, 4)} />
+                            <button className="textButton" type="button" onClick={() => handleAnalyze(solution.variant)}>Open {solution.label}</button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
               ) : (
-                <div className="placeholder">
-                  Select a phase and matchup, then click <b>Generate clip</b>.
+                <div className="unavailablePanel">
+                  <div>
+                    <span className="availabilityPill">Not catalogued yet</span>
+                    <h3>{phaseLabel(phase)} · {own} vs {opp}</h3>
+                    <p>This combination is not a dead end anymore. Request it and use demand to prioritise the next ProAnalyst scenario.</p>
+                  </div>
+                  <div className="requestBox">
+                    <textarea
+                      value={requestNote}
+                      onChange={(e) => setRequestNote(e.target.value)}
+                      placeholder="Optional: add the specific tactical problem (e.g. high press, goalkeeper involved, no long ball)."
+                    />
+                    <button className="primaryButton" type="button" onClick={requestScenario} disabled={requestState === "sending" || requestState === "sent"}>
+                      {requestState === "sent" ? "Request recorded ✓" : requestState === "sending" ? "Recording…" : "Request this analysis"}
+                    </button>
+                    {requestState === "error" && <small className="errorText">The request could not be recorded.</small>}
+                  </div>
                 </div>
               )}
-            </div>
-          </div>
-        </div>
+            </section>
 
-        {DEBUG && (
-          <div className="small" style={{ marginTop: 12, opacity: 0.6 }}>
-            Status: <b>{status || "idle"}</b>{" "}
-            {jobId && (
-              <>
-                · Job: <b>{jobId}</b>
-              </>
-            )}
-          </div>
+            <section className="workspaceSection resultSection">
+              <div className="sectionTitleRow">
+                <div><span>04</span><h2>Tactical result</h2></div>
+                {currentAnalysis && (
+                  <button
+                    className={`favoriteButton ${favorites.includes(currentAnalysis.scenario_id) ? "active" : ""}`}
+                    type="button"
+                    onClick={() => toggleFavorite(currentAnalysis.scenario_id)}
+                  >
+                    {favorites.includes(currentAnalysis.scenario_id) ? "★ Saved" : "☆ Save analysis"}
+                  </button>
+                )}
+              </div>
+
+              {message && <div className="errorNotice">{message}</div>}
+
+              {currentAnalysis && videoUrl ? (
+                <div className="resultCard">
+                  <div className="videoPanel">
+                    <div className="videoHeader">
+                      <div><span>{currentAnalysis.phase_label}</span><strong>{currentAnalysis.own} <em>vs</em> {currentAnalysis.opp}</strong></div>
+                      <span className="solutionBadge">{currentAnalysis.label}</span>
+                    </div>
+                    <video key={videoUrl} src={videoUrl} controls playsInline className="analysisVideo" />
+                  </div>
+                  <TacticalDetail solution={currentAnalysis} />
+                </div>
+              ) : (
+                <EmptyState title="Your analysis will appear here">
+                  Select a validated solution and click Analyse Scenario. The video will be paired with objective, principles, key actions, risks and coaching points.
+                </EmptyState>
+              )}
+
+              {currentAnalysis && (
+                <div className="feedbackPanel">
+                  <div><strong>Was this solution useful?</strong><span>Your feedback guides which tactical problems ProAnalyst develops next.</span></div>
+                  <input value={feedbackNote} onChange={(e) => setFeedbackNote(e.target.value)} placeholder="Optional coaching note" />
+                  <div className="feedbackActions">
+                    <button type="button" onClick={() => sendFeedback(true)} disabled={feedbackState === "sending"}>Useful ↑</button>
+                    <button type="button" onClick={() => sendFeedback(false)} disabled={feedbackState === "sending"}>Not useful ↓</button>
+                  </div>
+                  {(feedbackState === "positive" || feedbackState === "negative") && <small>Feedback recorded. Thank you.</small>}
+                  {feedbackState === "error" && <small className="errorText">Feedback could not be recorded.</small>}
+                </div>
+              )}
+            </section>
+          </>
         )}
-      </div>
+
+        {!loading && view === "library" && (
+          <>
+            <header className="workspaceHeader">
+              <div><div className="sectionEyebrow">TACTICAL KNOWLEDGE BASE</div><h1>Video Library</h1><p>Browse validated scenarios by phase, structure or tactical principle.</p></div>
+              <div className="catalogCounter"><strong>{libraryItems.length}</strong><span>matching solutions</span></div>
+            </header>
+            <div className="libraryToolbar">
+              <input value={librarySearch} onChange={(e) => setLibrarySearch(e.target.value)} placeholder="Search formation, principle, objective…" />
+              <select value={libraryPhase} onChange={(e) => setLibraryPhase(e.target.value)}>
+                <option value="all">All phases</option>
+                {catalog?.phases?.map((item) => <option key={item} value={item}>{phaseLabel(item)}</option>)}
+              </select>
+            </div>
+            <div className="libraryGrid">
+              {libraryItems.map((item) => (
+                <article className="libraryCard" key={item.scenario_id}>
+                  <div className="libraryVisual">
+                    <FormationPitch formation={item.own} />
+                    <div className="libraryVs"><span>{item.own}</span><em>vs</em><span>{item.opp}</span></div>
+                  </div>
+                  <div className="libraryBody">
+                    <div className="libraryMeta"><span>{item.phase_label}</span><span>{item.label}</span></div>
+                    <h3>{item.title}</h3>
+                    <p>{item.objective}</p>
+                    <div className="principleChips smallChips">{item.principles?.slice(0, 3).map((p) => <span key={p}>{p}</span>)}</div>
+                    <div className="libraryActions">
+                      <button className="secondaryButton" type="button" onClick={() => openScenario(item)}>Open analysis</button>
+                      <button className={`iconButton ${favorites.includes(item.scenario_id) ? "active" : ""}`} type="button" onClick={() => toggleFavorite(item.scenario_id)} aria-label="Toggle favorite">
+                        {favorites.includes(item.scenario_id) ? "★" : "☆"}
+                      </button>
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+            {!libraryItems.length && <EmptyState title="No matching scenarios">Try another phase, formation or tactical keyword.</EmptyState>}
+          </>
+        )}
+
+        {!loading && view === "history" && (
+          <>
+            <header className="workspaceHeader">
+              <div><div className="sectionEyebrow">PERSONAL WORKSPACE</div><h1>My Analyses</h1><p>Return to recent scenarios and keep the most useful solutions close.</p></div>
+              <div className="catalogCounter"><strong>{favorites.length}</strong><span>saved favorites</span></div>
+            </header>
+
+            <section className="historySection">
+              <div className="sectionTitleRow"><div><span>★</span><h2>Saved</h2></div></div>
+              <div className="historyGrid">
+                {catalog?.combos?.filter((item) => favorites.includes(item.scenario_id)).map((item) => (
+                  <button className="historyCard" type="button" key={item.scenario_id} onClick={() => openScenario(item)}>
+                    <div><span>{item.phase_label} · {item.label}</span><strong>{item.own} vs {item.opp}</strong></div><p>{item.title}</p><em>Open →</em>
+                  </button>
+                ))}
+              </div>
+              {!favorites.length && <p className="muted">Save a tactical result or library item and it will appear here.</p>}
+            </section>
+
+            <section className="historySection">
+              <div className="sectionTitleRow"><div><span>↺</span><h2>Recent analyses</h2></div><p>Stored locally on this device.</p></div>
+              <div className="historyList">
+                {history.map((item) => (
+                  <button className="historyRow" type="button" key={`${item.scenario_id}-${item.created_at}`} onClick={() => openScenario(item)}>
+                    <span className="historyDate">{new Date(item.created_at).toLocaleDateString()}</span>
+                    <span className="historyPhase">{item.phase_label}</span>
+                    <strong>{item.own} vs {item.opp}</strong>
+                    <span>{item.label}</span>
+                    <em>{item.title}</em>
+                    <b>→</b>
+                  </button>
+                ))}
+              </div>
+              {!history.length && <EmptyState title="No analyses yet">Run your first tactical scenario and it will be remembered here.</EmptyState>}
+            </section>
+          </>
+        )}
+
+        {!loading && view === "methodology" && (
+          <>
+            <header className="workspaceHeader">
+              <div><div className="sectionEyebrow">LINE B · CLUB ENVIRONMENT</div><h1>Club Methodology</h1><p>A separate workspace for each club's own game model, principles and development pathway.</p></div>
+              <div className="roadmapBadge">Product roadmap</div>
+            </header>
+
+            <div className="methodologyHero">
+              <div>
+                <span className="availabilityPill">Architecture direction</span>
+                <h2>ProAnalyst is the platform. The club owns the methodology.</h2>
+                <p>This area is intentionally separate from Tactical Analysis. It will organise a club's principles, age-group progression, training content and video references without imposing a universal ProAnalyst methodology.</p>
+              </div>
+              <div className="methodologyMap">
+                {["Game Model", "Principles", "Age Groups", "Training Sessions", "Video Examples", "Player Development"].map((item, index) => (
+                  <div key={item}><span>0{index + 1}</span><strong>{item}</strong></div>
+                ))}
+              </div>
+            </div>
+
+            <div className="futureGrid">
+              <article><span>01</span><h3>Human methodology first</h3><p>Staff define the content and structure before generative AI is allowed to extend it.</p></article>
+              <article><span>02</span><h3>Club-specific knowledge</h3><p>Every organisation keeps its own vocabulary, priorities, progressions and references.</p></article>
+              <article><span>03</span><h3>AI on the same structure</h3><p>The future engine can retrieve and generate sessions or explanations without losing the club's identity.</p></article>
+            </div>
+          </>
+        )}
+
+        <footer className="appFooter">
+          <span>ProAnalyst Labs v1.1 · Tactical Intelligence Platform</span>
+          <span>Deterministic video layer today · Motor IA architecture next</span>
+        </footer>
+      </main>
     </div>
   );
 }

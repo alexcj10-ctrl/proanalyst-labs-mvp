@@ -1,0 +1,43 @@
+name: ProAnalyst CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install backend dependencies
+        run: pip install -r backend/requirements.txt
+      - name: Verify backend catalog
+        env:
+          PYTHONPATH: backend
+        run: |
+          python -m py_compile backend/main.py backend/sequences.py
+          python - <<'PY'
+          from pathlib import Path
+          from sequences import SEQUENCE_INDEX, build_catalog
+          catalog = build_catalog()
+          assert len(SEQUENCE_INDEX) == len(catalog["combos"])
+          missing = [name for name in SEQUENCE_INDEX.values() if not (Path("backend/videos") / name).is_file()]
+          assert not missing, missing
+          print(f"Verified {len(SEQUENCE_INDEX)} tactical scenarios")
+          PY
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: Install frontend dependencies
+        working-directory: web
+        run: npm ci
+      - name: Build frontend
+        working-directory: web
+        run: npm run build

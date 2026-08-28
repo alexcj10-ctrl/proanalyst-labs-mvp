@@ -14,3 +14,6 @@ venv/
 # OS
 .DS_Store
 Thumbs.db
+
+# Runtime telemetry (MVP, not source data)
+backend/.runtime/
