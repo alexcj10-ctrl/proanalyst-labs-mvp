@@ -30,13 +30,31 @@ The migration is implemented and verified on an isolated preview.
 - Original backend, video backups, CSS, introduction, logo and whitepaper remain.
 
 
-### Production readiness
+### Produzione pubblicata e verificata — 12 novembre 2026
 
-Do not merge automatically. Before release, connect production to the public media
-store and a separate private production store, provision server-only staff secrets
-for production, and validate a staged deployment. Preview data and credentials
-must not be reused as production state. No production environment variables,
-domain aliases, or production branch have been changed during this migration.
+La versione italiana è online su https://proanalyst-labs-mvp.vercel.app.
+Deployment promosso: `dpl_FDmTrEFaYabpscwTAZeeZ7Q5ycDq`, commit applicativo
+`29991c724f1ded1ad22d852aec3a295c08e3ac0d`, progetto ProAnalyst verificato.
+Lo staging è stato verificato prima di assegnare il dominio; successivamente
+sono passati sul dominio pubblico riproduzione e seek di tutti i 24 video,
+accesso staff, autorizzazione delle statistiche, logout e layout mobile.
+
+Storage privato separato: `proanalyst-private-production`
+(`store_rQ8LRImWqJMVBXU4`), collegato solo a produzione tramite OIDC.
+Le credenziali staff di produzione sono diverse da quelle della preview;
+nessun segreto è nel repository. Nessun riscontro o richiesta fittizia è stato
+inserito nei dati di produzione. Le scritture persistenti sono state verificate
+sulla preview. Il piano Hobby è rimasto invariato.
+
+Render: individuato il solo servizio `proanalyst-backend`
+(`srv-d5a7hhruibrs73bml5q0`), nel progetto `My project`
+(`prj-d5a7hhn5r7bs739lomq0`), piano Free, nessun disco persistente.
+Fatturazione osservata: 0,00 USD maturati e previsti per novembre.
+La cancellazione definitiva è in attesa della conferma richiesta dal controllo
+browser; il servizio non è stato cancellato. I backup locali restano conservati.
+
+Le sezioni seguenti descrivono anche le verifiche iniziali della migrazione.
+La PR rimane aperta sulla branch originale; non è stato eseguito il merge in main.
 
 The accidental `upload-videos` project created by a CLI argument interpretation
 was inspected by exact name and deleted with explicit user authorization. It is
@@ -131,9 +149,8 @@ React no longer reads the legacy `VITE_API_URL` setting.
   and wrong passwords rejected; feedback and scenario requests persisted and
   appeared in staff insights; logout invalidated the session; mobile layout passed.
 - Machine-readable live evidence: `web/preview-verification.json`.
-- No production deployment or paid upgrade performed. Original backend, video
-  backups, App.css and public assets remain intact.
+- Nessun piano a pagamento attivato. Backend originale, video di backup, App.css
+  e contenuti pubblici sono rimasti intatti.
 
-The remaining release step is review and a deliberate production cutover with
-separate production staff credentials and private data storage. Legacy rollback
-remains possible because backend and deployment configuration were retained.
+Restano la revisione e il merge della PR, oltre alla conferma finale per la
+dismissione Render. La versione italiana è già pubblicata e verificata.

@@ -6,9 +6,10 @@ import catalog from '../src/data/catalog.json' with { type: 'json' };
 import media from '../src/data/media.json' with { type: 'json' };
 
 const origin = new URL(process.argv[2]).origin;
+const readOnly = process.argv.includes('--read-only');
 if (!origin.includes('proanalyst-labs-') || !origin.endsWith('.vercel.app')) throw new Error('Unexpected preview target');
 const credentials = JSON.parse(await readFile(process.env.STAFF_ACCESS_FILE, 'utf8'));
-const headers = { 'x-vercel-trusted-oidc-idp-token': process.env.VERCEL_OIDC_TOKEN };
+const headers = process.env.VERCEL_OIDC_TOKEN ? { 'x-vercel-trusted-oidc-idp-token': process.env.VERCEL_OIDC_TOKEN } : {};
 const browser = await chromium.launch({ channel: 'chrome', headless: true });
 const context = await browser.newContext();
 // Never send the deployment-protection token to Blob or any third-party origin.
@@ -23,6 +24,8 @@ try {
   await page.getByRole('button', { name: "Entra nella demo" }).click();
   await page.getByRole('button', { name: "Salta introduzione" }).click();
   await page.getByRole('button', { name: "Genera", exact: false }).click();
+  assert.equal(await page.locator('html').getAttribute('lang'), 'it');
+  await page.screenshot({ path: 'test-results/italian-desktop.png', fullPage: true });
   for (const item of catalog.combos) {
     await page.getByRole('button', { name: "Libreria video" }).click();
     await page.locator('.libraryCard').nth(catalog.combos.indexOf(item)).getByRole('button', { name: "Apri analisi" }).click();
@@ -44,10 +47,11 @@ try {
     return { status: response.status(), body: await response.json() };
   };
   assert.equal((await request('insights')).status, 401);
-  assert.equal((await request('login', { username: credentials.username, password: 'incorrect-test-password' })).status, 401);
+  if (!readOnly) assert.equal((await request('login', { username: credentials.username, password: 'incorrect-test-password' })).status, 401);
   assert.equal((await request('login', credentials)).status, 200);
   const before = await request('insights');
   assert.equal(before.status, 200);
+  if (!readOnly) {
   const feedback = await request('feedback', { scenario_id: catalog.combos[0].scenario_id, useful: true, note: 'Automated preview acceptance test' });
   assert.equal(feedback.status, 201);
   assert.equal(feedback.body.status, 'recorded');
@@ -56,20 +60,23 @@ try {
   const after = await request('insights');
   assert.equal(after.body.feedback_count, before.body.feedback_count + 1);
   assert.equal(after.body.scenario_requests, before.body.scenario_requests + 1);
+  report.checks.push('wrong password rejected', 'persistent feedback', 'persistent scenario request');
+  }
   assert.equal((await request('logout', {})).status, 200);
   assert.equal((await request('insights')).status, 401);
-  report.checks.push('staff authorization', 'wrong password rejected', 'persistent feedback', 'persistent scenario request', 'private insights', 'logout revocation');
+  report.checks.push('staff authorization', 'private insights', 'logout revocation');
   assert.deepEqual(errors, []);
   await page.setViewportSize({ width: 390, height: 844 });
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
   report.checks.push('mobile layout', 'no browser runtime errors');
+  await page.screenshot({ path: 'test-results/italian-mobile.png', fullPage: true });
 } catch (error) {
   console.log('Page title:', await page.title());
   console.log('Runtime errors:', JSON.stringify(errors));
   await page.screenshot({ path: 'test-results/preview-failure.png' });
   throw error;
 } finally {
-  await writeFile(new URL('../preview-verification.json', import.meta.url), JSON.stringify(report, null, 2) + '\n');
+  await writeFile(process.env.VERIFICATION_REPORT || new URL('../preview-verification.json', import.meta.url), JSON.stringify(report, null, 2) + '\n');
   await browser.close();
 }
 console.log('Preview acceptance checks passed.');

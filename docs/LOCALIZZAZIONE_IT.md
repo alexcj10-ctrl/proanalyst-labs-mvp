@@ -26,3 +26,6 @@ di test esplicite: l'applicazione continua a utilizzare le vere Vercel Functions
 Il whitepaper originale contiene 16 pagine in inglese ed è conservato senza
 modifiche. Anche introduzione e video tattici restano invariati: la localizzazione
 non altera eventuali scritte o audio incorporati nei file multimediali.
+
+La versione italiana è verificata anche sul dominio pubblico Vercel, con
+riproduzione e seek dei 24 video e autenticazione staff reale.
