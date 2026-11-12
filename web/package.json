@@ -3,6 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "overrides": { "@vercel/cli-config": { "zod": "^4.6.6" } },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -14,6 +15,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@vercel/blob": "^2.9.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },

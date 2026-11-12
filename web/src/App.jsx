@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import "./App.css";
 
 import { catalog, findScenario, scenarioVideoUrl } from "./catalog";
-import { SERVER_UNAVAILABLE } from "./services/server";
+import { serverRequest, recordEvent } from "./services/server";
 const MEDIA_BASE = import.meta.env.VITE_MEDIA_BASE_URL || "";
 const WHITEPAPER_URL = "/ProAnalystLabs_Whitepaper.pdf";
 const INTRO_VIDEO_URL = "/intro.mp4";
@@ -171,6 +171,14 @@ function EmptyState({ title, children }) {
 export default function App() {
   const [isAuthed, setIsAuthed] = useState(false);
   const [staffOpen, setStaffOpen] = useState(false);
+  const [staff, setStaff] = useState(false);
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [authError, setAuthError] = useState("");
+  const [authBusy, setAuthBusy] = useState(false);
+  const [insights, setInsights] = useState(null);
+  const [insightsError, setInsightsError] = useState("");
+  const [pendingEvents, setPendingEvents] = useState({});
   const [showIntro, setShowIntro] = useState(false);
 
   const [view, setView] = useState("analyze");
@@ -210,7 +218,12 @@ export default function App() {
     resetResult();
   };
 
-  const logout = () => {
+  const logout = async () => {
+    if (staff) {
+      try { await serverRequest("logout", {}); }
+      catch (error) { setMessage(error.message); return; }
+    }
+    setStaff(false);
     setIsAuthed(false);
     setShowIntro(false);
     resetResult();
@@ -274,8 +287,33 @@ export default function App() {
     showScenario(findScenario(phase, own, opp, requestedVariant));
   };
 
-  const requestScenario = () => setRequestState("unavailable");
-  const sendFeedback = () => setFeedbackState("unavailable");
+  const submitEvent = async (action, body, setter) => {
+    const fingerprint = JSON.stringify(body);
+    const key = pendingEvents[fingerprint] || crypto.randomUUID();
+    setPendingEvents((prev) => ({ ...prev, [fingerprint]: key }));
+    setter("sending");
+    try {
+      await recordEvent(action, body, key);
+      setter("recorded");
+    } catch (error) { setter(error.message); }
+  };
+  const requestScenario = () => submitEvent("scenario-requests", { phase, own, opp, note: requestNote }, setRequestState);
+  const sendFeedback = (useful) => submitEvent("feedback", { scenario_id: currentAnalysis.scenario_id, useful, note: feedbackNote }, setFeedbackState);
+
+  const staffLogin = async (event) => {
+    event.preventDefault(); setAuthBusy(true); setAuthError("");
+    try {
+      const result = await serverRequest("login", { username, password });
+      if (result.staff !== true) throw new Error("Staff access was not confirmed.");
+      setPassword(""); setStaff(true); handleDemoLogin();
+    } catch (error) { setAuthError(error.message); }
+    finally { setAuthBusy(false); }
+  };
+  const openInsights = async () => {
+    setView("insights"); setInsights(null); setInsightsError("");
+    try { setInsights(await serverRequest("insights")); }
+    catch (error) { setInsightsError(error.message); }
+  };
 
   const toggleFavorite = (scenarioId) => {
     setFavorites((prev) => {
@@ -345,9 +383,12 @@ export default function App() {
             </button>
 
             {staffOpen && (
-              <div className="staffForm" role="status">
-                Staff login is not available yet. Server authentication is planned; no credentials are collected.
-              </div>
+              <form className="staffForm" onSubmit={staffLogin}>
+                <label>User<input value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="username" required /></label>
+                <label>Password<input type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" required /></label>
+                <button className="secondaryButton" disabled={authBusy}>{authBusy ? "Signing in…" : "Sign in"}</button>
+                {authError && <p role="alert">{authError}</p>}
+              </form>
             )}
 
             <div className="loginFoot">Public deterministic demo · No login required</div>
@@ -402,6 +443,7 @@ export default function App() {
           <button className={view === "methodology" ? "active" : ""} onClick={() => setView("methodology")}>
             <span className="navIcon">◇</span><span>Club Methodology</span>
           </button>
+          {staff && <button className={view === "insights" ? "active" : ""} onClick={openInsights}>Staff Insights</button>}
         </nav>
 
         <div className="sidebarGrow" />
@@ -415,11 +457,12 @@ export default function App() {
 
       <div className="mobileBar">
         <div className="sidebarBrand"><img src="/logo-proanalyst.png" alt="" /><strong>ProAnalyst Labs</strong></div>
-        <select value={view} onChange={(e) => setView(e.target.value)} aria-label="Section">
+        <select value={view} onChange={(e) => e.target.value === "insights" ? openInsights() : setView(e.target.value)} aria-label="Section">
           <option value="analyze">Tactical Analysis</option>
           <option value="library">Video Library</option>
           <option value="history">My Analyses</option>
           <option value="methodology">Club Methodology</option>
+          {staff && <option value="insights">Staff Insights</option>}
         </select>
       </div>
 
@@ -529,7 +572,7 @@ export default function App() {
                   <div>
                     <span className="availabilityPill">Not catalogued yet</span>
                     <h3>{phaseLabel(phase)} · {own} vs {opp}</h3>
-                    <p>This combination is not in the deterministic catalog. Scenario requests are not available yet.</p>
+                    <p>This combination is not in the deterministic catalog. Request it to help prioritise the next scenario.</p>
                   </div>
                   <div className="requestBox">
                     <textarea
@@ -537,10 +580,10 @@ export default function App() {
                       onChange={(e) => setRequestNote(e.target.value)}
                       placeholder="Optional: add the specific tactical problem (e.g. high press, goalkeeper involved, no long ball)."
                     />
-                    <button className="primaryButton" type="button" onClick={requestScenario} >
-                      Scenario requests · unavailable
+                    <button className="primaryButton" type="button" onClick={requestScenario} disabled={requestState === "sending" || requestState === "recorded"}>
+                      {requestState === "sending" ? "Saving…" : "Request this analysis"}
                     </button>
-                    {requestState && <small role="status">{SERVER_UNAVAILABLE}</small>}
+                    {requestState && <small role="status">{requestState === "recorded" ? "Request recorded." : requestState === "sending" ? "Saving…" : requestState}</small>}
                   </div>
                 </div>
               )}
@@ -588,13 +631,13 @@ export default function App() {
 
               {currentAnalysis && (
                 <div className="feedbackPanel">
-                  <div><strong>Was this solution useful?</strong><span>Feedback is not available yet. No notes or ratings are sent.</span></div>
+                  <div><strong>Was this solution useful?</strong><span>Your feedback helps prioritise future tactical scenarios.</span></div>
                   <input value={feedbackNote} onChange={(e) => setFeedbackNote(e.target.value)} placeholder="Optional coaching note" />
                   <div className="feedbackActions">
-                    <button type="button" onClick={() => sendFeedback(true)}>Useful ↑</button>
-                    <button type="button" onClick={() => sendFeedback(false)}>Not useful ↓</button>
+                    <button type="button" onClick={() => sendFeedback(true)} disabled={feedbackState === "sending" || feedbackState === "recorded"}>Useful ↑</button>
+                    <button type="button" onClick={() => sendFeedback(false)} disabled={feedbackState === "sending" || feedbackState === "recorded"}>Not useful ↓</button>
                   </div>
-                  {feedbackState && <small role="status">{SERVER_UNAVAILABLE}</small>}
+                  {feedbackState && <small role="status">{feedbackState === "recorded" ? "Feedback recorded. Thank you." : feedbackState === "sending" ? "Saving…" : feedbackState}</small>}
                 </div>
               )}
             </section>
@@ -706,6 +749,16 @@ export default function App() {
           </>
         )}
 
+        {view === "insights" && staff && <section>
+          <header className="workspaceHeader"><div><div className="sectionEyebrow">STAFF ONLY</div><h1>Staff Insights</h1><p>Feedback and requests stored privately.</p></div></header>
+          {insightsError && <p role="alert">{insightsError}</p>}
+          {!insights && !insightsError && <p role="status">Loading insights…</p>}
+          {insights && <><div className="historyGrid">
+            <div className="historyCard"><strong>{insights.feedback_count}</strong><p>Feedback submissions</p></div>
+            <div className="historyCard"><strong>{insights.positive_feedback}</strong><p>Positive feedback</p></div>
+            <div className="historyCard"><strong>{insights.scenario_requests}</strong><p>Scenario requests</p></div>
+          </div><h2>Most requested scenarios</h2><ul>{insights.top_requested_scenarios.map(([key, count]) => <li key={key}>{key.replaceAll("|", " · ")} — {count}</li>)}</ul></>}
+        </section>}
         <footer className="appFooter">
           <span>ProAnalyst Labs v1.1 · Tactical Intelligence Platform</span>
           <span>Deterministic video layer today · Motor IA architecture next</span>

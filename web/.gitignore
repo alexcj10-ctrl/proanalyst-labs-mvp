@@ -24,3 +24,6 @@ playwright-report/
 *.njsproj
 *.sln
 *.sw?
+
+.vercel
+.env*

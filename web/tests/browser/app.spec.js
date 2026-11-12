@@ -12,15 +12,15 @@ test('complete deterministic workflow without API, preserving personal data', as
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
   page.on('request', (request) => {
-    if (/\/(demo-login|catalog|generate|status|login|feedback|scenario-requests|insights)(\/|\?|$)/.test(new URL(request.url()).pathname)) apiRequests.push(request.url());
+    if (/\/(demo-login|catalog|generate|status)(\/|\?|$)/.test(new URL(request.url()).pathname)) apiRequests.push(request.url());
   });
   await enterDemo(page);
   await page.getByRole('button', { name: 'Generate', exact: false }).click();
   await expect(page.locator('.tacticalDetail h2')).toHaveText('Goalkeeper + third-man press escape');
-  await expect(page.getByText('Video not connected')).toBeVisible();
+  await expect(page.locator('.analysisVideo')).toHaveAttribute('src', /public.blob.vercel-storage.com/);
   await page.getByRole('button', { name: 'Save analysis' }).click();
   await page.getByRole('button', { name: 'Useful ↑', exact: true }).click();
-  await expect(page.getByText(/nothing has been sent/)).toBeVisible();
+  await expect(page.getByRole('status')).toContainText('Service temporarily unavailable');
 
   await page.getByRole('button', { name: 'Video Library' }).click();
   await expect(page.locator('.libraryCard')).toHaveCount(24);
@@ -43,7 +43,7 @@ test('complete deterministic workflow without API, preserving personal data', as
   await expect(page.getByText('Not catalogued yet', { exact: true })).toBeVisible();
   await expect(page.locator('.resultCard')).toHaveCount(0);
   await page.getByRole('button', { name: 'Scenario requests · unavailable' }).click();
-  await expect(page.getByText(/nothing has been sent/)).toBeVisible();
+  await expect(page.getByRole('status')).toContainText('Service temporarily unavailable');
 
   await page.reload();
   await page.getByRole('button', { name: 'Enter Demo' }).click();
@@ -62,12 +62,12 @@ test('complete deterministic workflow without API, preserving personal data', as
   expect(errors).toEqual([]);
 });
 
-test('mobile navigation, finishing pattern and unavailable staff access', async ({ page }) => {
+test('mobile navigation, finishing pattern and staff form', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
   await page.getByRole('button', { name: 'Staff access', exact: true }).click();
-  await expect(page.getByRole('status')).toContainText('Staff login is not available');
-  await expect(page.locator('input[type=password]')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Sign in', exact: true })).toBeVisible();
+  await expect(page.locator('input[type=password]')).toHaveCount(1);
   await enterDemo(page);
   await page.getByRole('combobox', { name: 'Section' }).selectOption('library');
   await page.locator('.libraryToolbar select').selectOption('finishing');

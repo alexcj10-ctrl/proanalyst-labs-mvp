@@ -1,10 +1,16 @@
-// Explicit capability boundary for future same-origin Vercel Functions.
-// Enable each capability only after authentication, validation and durable storage exist.
-export const serverFeatures = Object.freeze({
-  staffLogin: { endpoint: '/api/login', method: 'POST', available: false },
-  feedback: { endpoint: '/api/feedback', method: 'POST', available: false },
-  scenarioRequests: { endpoint: '/api/scenario-requests', method: 'POST', available: false },
-  insights: { endpoint: '/api/insights', method: 'GET', available: false },
-});
+export async function serverRequest(action, body, idempotencyKey) {
+  const response = await fetch(`/api/${action}`, {
+    method: body === undefined ? 'GET' : 'POST', credentials: 'same-origin',
+    headers: { 'Content-Type': 'application/json', ...(idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : {}) },
+    ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+  });
+  const data = await response.json().catch(() => ({ error: 'Service unavailable' }));
+  if (!response.ok) throw new Error(data.error || 'Service unavailable');
+  return data;
+}
 
-export const SERVER_UNAVAILABLE = 'Not available yet. This service has not been activated; nothing has been sent.';
+export async function recordEvent(action, body, idempotencyKey) {
+  const data = await serverRequest(action, body, idempotencyKey);
+  if (data.status !== 'recorded' || !data.id) throw new Error('The server did not confirm saving.');
+  return data;
+}

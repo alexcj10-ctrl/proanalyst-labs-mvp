@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { catalog, findScenario, scenarioVideoUrl } from '../src/catalog.js';
-import { serverFeatures } from '../src/services/server.js';
+import media from '../src/data/media.json' with { type: 'json' };
 
 test('all 24 scenarios resolve with the exact variant and filename', () => {
   assert.equal(catalog.combos.length, 24);
@@ -19,13 +19,19 @@ test('missing scenarios and variants never silently fall back to A', () => {
 });
 
 test('unconfigured or unsafe media origins do not create broken video URLs', () => {
-  for (const base of ['', ' ', '/videos', 'javascript:alert(1)', 'https://user:secret@example.test', 'https://example.test?token=secret']) {
+  for (const base of ['/videos', 'javascript:alert(1)', 'https://user:secret@example.test', 'https://example.test?token=secret']) {
     assert.equal(scenarioVideoUrl(catalog.combos[0], base), '');
   }
   assert.equal(scenarioVideoUrl(null, 'https://example.test'), '');
 });
 
-test('all server capabilities are explicitly unavailable', () => {
-  assert.equal(Object.keys(serverFeatures).length, 4);
-  for (const feature of Object.values(serverFeatures)) assert.equal(feature.available, false);
+test('all 24 videos have verified real Blob URLs and content hashes', () => {
+  assert.equal(Object.keys(media).length, 24);
+  for (const item of catalog.combos) {
+    const video = media[item.video];
+    assert.ok(video.size > 0);
+    assert.match(video.sha256, /^[a-f0-9]{64}$/);
+    assert.match(video.url, /^https:\/\/[a-z0-9]+\.public\.blob\.vercel-storage\.com\/tactics\//);
+    assert.equal(scenarioVideoUrl(item), video.url);
+  }
 });

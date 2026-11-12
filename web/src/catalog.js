@@ -1,4 +1,5 @@
 import catalog from './data/catalog.json' with { type: 'json' };
+import media from './data/media.json' with { type: 'json' };
 
 export { catalog };
 
@@ -9,7 +10,8 @@ export function findScenario(phase, own, opp, variant) {
 
 // Media hosting is intentionally separate from catalog availability.
 export function scenarioVideoUrl(solution, base = '') {
-  if (!solution || !base.trim()) return '';
+  if (!solution) return '';
+  if (!base.trim()) return media[solution.video]?.url || '';
   try {
     const url = new URL(base);
     if (!['https:', 'http:'].includes(url.protocol) || url.username || url.password || url.search || url.hash) return '';
