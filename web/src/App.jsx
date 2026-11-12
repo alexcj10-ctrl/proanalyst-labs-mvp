@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import "./App.css";
+import { t, phaseLabel, requestLabel } from "./i18n/index.js";
 
 import { catalog, findScenario, scenarioVideoUrl } from "./catalog";
 import { serverRequest, recordEvent } from "./services/server";
@@ -10,12 +11,12 @@ const STORAGE_HISTORY = "proanalyst_history_v11";
 const STORAGE_FAVORITES = "proanalyst_favorites_v11";
 
 const PHASE_DESCRIPTIONS = {
-  build_up: "Create the conditions to escape the first pressure with control.",
-  progression: "Advance through or around the opponent's intermediate block.",
-  creation: "Create advantages around the final line before the decisive action.",
-  finishing: "Coordinate arrivals and occupation of the final third.",
-  defensive_org: "Organise distances, cover and pressure when defending the block.",
-  transition: "React and reorganise immediately after possession changes.",
+  build_up: t("Create the conditions to escape the first pressure with control."),
+  progression: t("Advance through or around the opponent's intermediate block."),
+  creation: t("Create advantages around the final line before the decisive action."),
+  finishing: t("Coordinate arrivals and occupation of the final third."),
+  defensive_org: t("Organise distances, cover and pressure when defending the block."),
+  transition: t("React and reorganise immediately after possession changes."),
 };
 
 const FORMATION_LINES = {
@@ -37,18 +38,6 @@ function readStoredJson(key, fallback) {
   } catch {
     return fallback;
   }
-}
-
-function phaseLabel(value) {
-  const labels = {
-    build_up: "Build Up",
-    progression: "Progression",
-    creation: "Creation",
-    finishing: "Finishing",
-    defensive_org: "Defensive Organisation",
-    transition: "Transition",
-  };
-  return labels[value] || value?.replaceAll("_", " ") || "";
 }
 
 function FormationPitch({ formation, compact = false }) {
@@ -99,13 +88,13 @@ function SolutionSummary({ solution, selected, onClick }) {
     >
       <div className="solutionChoiceTop">
         <span className="solutionBadge">{solution.label}</span>
-        <span className="riskBadge">Risk · {solution.profile?.risk}</span>
+        <span className="riskBadge">{t("Risk ·")} {solution.profile?.risk}</span>
       </div>
       <strong>{solution.title}</strong>
       <p>{solution.objective}</p>
       <div className="solutionMetrics">
-        <span>Verticality · {solution.profile?.verticality}</span>
-        <span>Tempo · {solution.profile?.tempo}</span>
+        <span>{t("Verticality ·")} {solution.profile?.verticality}</span>
+        <span>{t("Tempo ·")} {solution.profile?.tempo}</span>
       </div>
     </button>
   );
@@ -132,14 +121,14 @@ function TacticalDetail({ solution }) {
     <div className="tacticalDetail">
       <div className="detailHeader">
         <div>
-          <div className="sectionEyebrow">Tactical solution</div>
+          <div className="sectionEyebrow">{t("Tactical solution")}</div>
           <h2>{solution.title}</h2>
           <p>{solution.objective}</p>
         </div>
         <div className="metricStack">
-          <span><small>Risk</small>{solution.profile?.risk}</span>
-          <span><small>Verticality</small>{solution.profile?.verticality}</span>
-          <span><small>Tempo</small>{solution.profile?.tempo}</span>
+          <span><small>{t("Risk")}</small>{solution.profile?.risk}</span>
+          <span><small>{t("Verticality")}</small>{solution.profile?.verticality}</span>
+          <span><small>{t("Tempo")}</small>{solution.profile?.tempo}</span>
         </div>
       </div>
 
@@ -150,9 +139,9 @@ function TacticalDetail({ solution }) {
       </div>
 
       <div className="detailGrid">
-        <InfoList title="Key actions" items={solution.key_actions} numbered />
-        <InfoList title="Coaching points" items={solution.coaching_points} />
-        <InfoList title="Risk notes" items={solution.risk_notes} />
+        <InfoList title={t("Key actions")} items={solution.key_actions} numbered />
+        <InfoList title={t("Coaching points")} items={solution.coaching_points} />
+        <InfoList title={t("Risk notes")} items={solution.risk_notes} />
       </div>
     </div>
   );
@@ -274,7 +263,7 @@ export default function App() {
   const showScenario = (solution) => {
     resetResult();
     if (!solution) {
-      setMessage("This scenario is not available in the deterministic catalog yet.");
+      setMessage(t("This scenario is not available in the deterministic catalog yet."));
       return;
     }
     setVariant(solution.variant);
@@ -304,7 +293,7 @@ export default function App() {
     event.preventDefault(); setAuthBusy(true); setAuthError("");
     try {
       const result = await serverRequest("login", { username, password });
-      if (result.staff !== true) throw new Error("Staff access was not confirmed.");
+      if (result.staff !== true) throw new Error(t("Staff access was not confirmed."));
       setPassword(""); setStaff(true); handleDemoLogin();
     } catch (error) { setAuthError(error.message); }
     finally { setAuthBusy(false); }
@@ -355,15 +344,15 @@ export default function App() {
             <span>PROANALYST LABS</span>
           </div>
           <div className="heroCopy">
-            <div className="heroKicker">TACTICAL INTELLIGENCE PLATFORM</div>
-            <h1>Turn a tactical problem into a clear coaching solution.</h1>
+            <div className="heroKicker">{t("TACTICAL INTELLIGENCE PLATFORM")}</div>
+            <h1>{t("Turn a tactical problem into a clear coaching solution.")}</h1>
             <p>
-              Explore deterministic 3D scenarios, tactical principles and coaching points in one professional workspace.
+              {t("Explore deterministic 3D scenarios, tactical principles and coaching points in one professional workspace.")}
             </p>
             <div className="heroStats">
-              <div><strong>24</strong><span>3D scenarios</span></div>
-              <div><strong>2</strong><span>active phases</span></div>
-              <div><strong>1</strong><span>decision workflow</span></div>
+              <div><strong>24</strong><span>{t("3D scenarios")}</span></div>
+              <div><strong>2</strong><span>{t("active phases")}</span></div>
+              <div><strong>1</strong><span>{t("decision workflow")}</span></div>
             </div>
           </div>
         </section>
@@ -371,27 +360,27 @@ export default function App() {
         <section className="loginPanel">
           <div className="loginPanelInner">
             <div className="versionPill">ProAnalyst v1.1</div>
-            <h2>Explore the platform</h2>
-            <p className="muted">No credentials required for the public demo.</p>
+            <h2>{t("Explore the platform")}</h2>
+            <p className="muted">{t("No credentials required for the public demo.")}</p>
             <button className="primaryButton large" type="button" onClick={handleDemoLogin}>
-              Enter Demo
+              {t("Enter Demo")}
               <span>→</span>
             </button>
 
             <button className="textButton" type="button" onClick={() => setStaffOpen((prev) => !prev)}>
-              {staffOpen ? "Hide staff access" : "Staff access"}
+              {staffOpen ? t("Hide staff access") : t("Staff access")}
             </button>
 
             {staffOpen && (
               <form className="staffForm" onSubmit={staffLogin}>
-                <label>User<input value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="username" required /></label>
-                <label>Password<input type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" required /></label>
-                <button className="secondaryButton" disabled={authBusy}>{authBusy ? "Signing in…" : "Sign in"}</button>
+                <label>{t("User")}<input value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="username" required /></label>
+                <label>{t("Password")}<input type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" required /></label>
+                <button className="secondaryButton" disabled={authBusy}>{authBusy ? t("Signing in…") : t("Sign in")}</button>
                 {authError && <p role="alert">{authError}</p>}
               </form>
             )}
 
-            <div className="loginFoot">Public deterministic demo · No login required</div>
+            <div className="loginFoot">{t("Public deterministic demo · No login required")}</div>
           </div>
         </section>
       </main>
@@ -413,7 +402,7 @@ export default function App() {
           onEnded={closeIntro}
           onError={closeIntro}
         />
-        <button className="introSkip" type="button" onClick={closeIntro}>Skip intro</button>
+        <button className="introSkip" type="button" onClick={closeIntro}>{t("Skip intro")}</button>
       </main>
     );
   }
@@ -430,39 +419,39 @@ export default function App() {
           <div><strong>ProAnalyst</strong><span>Labs</span></div>
         </div>
 
-        <nav className="sideNav" aria-label="Main navigation">
+        <nav className="sideNav" aria-label={t("Main navigation")}>
           <button className={view === "analyze" ? "active" : ""} onClick={() => setView("analyze")}>
-            <span className="navIcon">⌁</span><span>Tactical Analysis</span>
+            <span className="navIcon">⌁</span><span>{t("Tactical Analysis")}</span>
           </button>
           <button className={view === "library" ? "active" : ""} onClick={() => setView("library")}>
-            <span className="navIcon">▦</span><span>Video Library</span>
+            <span className="navIcon">▦</span><span>{t("Video Library")}</span>
           </button>
           <button className={view === "history" ? "active" : ""} onClick={() => setView("history")}>
-            <span className="navIcon">↺</span><span>My Analyses</span>
+            <span className="navIcon">↺</span><span>{t("My Analyses")}</span>
           </button>
           <button className={view === "methodology" ? "active" : ""} onClick={() => setView("methodology")}>
-            <span className="navIcon">◇</span><span>Club Methodology</span>
+            <span className="navIcon">◇</span><span>{t("Club Methodology")}</span>
           </button>
-          {staff && <button className={view === "insights" ? "active" : ""} onClick={openInsights}>Staff Insights</button>}
+          {staff && <button className={view === "insights" ? "active" : ""} onClick={openInsights}>{t("Staff Insights")}</button>}
         </nav>
 
         <div className="sidebarGrow" />
         <div className="developmentCard">
           <span className="statusDot" />
-          <div><strong>Motor IA v1</strong><span>Architecture ready · next layer</span></div>
+          <div><strong>{t("Motor IA v1")}</strong><span>{t("Architecture ready · next layer")}</span></div>
         </div>
-        <a className="sidebarLink" href={WHITEPAPER_URL} target="_blank" rel="noreferrer">Whitepaper ↗</a>
-        <button className="sidebarLogout" type="button" onClick={logout}>Logout</button>
+        <a className="sidebarLink" href={WHITEPAPER_URL} target="_blank" rel="noreferrer">{t("Whitepaper ↗")}</a>
+        <button className="sidebarLogout" type="button" onClick={logout}>{t("Logout")}</button>
       </aside>
 
       <div className="mobileBar">
         <div className="sidebarBrand"><img src="/logo-proanalyst.png" alt="" /><strong>ProAnalyst Labs</strong></div>
-        <select value={view} onChange={(e) => e.target.value === "insights" ? openInsights() : setView(e.target.value)} aria-label="Section">
-          <option value="analyze">Tactical Analysis</option>
-          <option value="library">Video Library</option>
-          <option value="history">My Analyses</option>
-          <option value="methodology">Club Methodology</option>
-          {staff && <option value="insights">Staff Insights</option>}
+        <select value={view} onChange={(e) => e.target.value === "insights" ? openInsights() : setView(e.target.value)} aria-label={t("Section")}>
+          <option value="analyze">{t("Tactical Analysis")}</option>
+          <option value="library">{t("Video Library")}</option>
+          <option value="history">{t("My Analyses")}</option>
+          <option value="methodology">{t("Club Methodology")}</option>
+          {staff && <option value="insights">{t("Staff Insights")}</option>}
         </select>
       </div>
 
@@ -471,17 +460,17 @@ export default function App() {
           <>
             <header className="workspaceHeader">
               <div>
-                <div className="sectionEyebrow">DECISION WORKSPACE</div>
-                <h1>Tactical Analysis</h1>
-                <p>Start from the football problem. ProAnalyst connects the scenario to the available tactical solution.</p>
+                <div className="sectionEyebrow">{t("DECISION WORKSPACE")}</div>
+                <h1>{t("Tactical Analysis")}</h1>
+                <p>{t("Start from the football problem. ProAnalyst connects the scenario to the available tactical solution.")}</p>
               </div>
-              <div className="catalogCounter"><strong>{catalog?.combos?.length || 0}</strong><span>validated video scenarios</span></div>
+              <div className="catalogCounter"><strong>{catalog?.combos?.length || 0}</strong><span>{t("validated video scenarios")}</span></div>
             </header>
 
             <section className="workspaceSection">
               <div className="sectionTitleRow">
-                <div><span>01</span><h2>Choose the game phase</h2></div>
-                <p>Only phases with validated content are active today.</p>
+                <div><span>01</span><h2>{t("Choose the game phase")}</h2></div>
+                <p>{t("Only phases with validated content are active today.")}</p>
               </div>
               <div className="phaseGrid">
                 {phaseRoadmap.map((item) => (
@@ -492,7 +481,7 @@ export default function App() {
                     disabled={!item.available}
                     onClick={() => changeMatchup(setPhase, item.id)}
                   >
-                    <div className="phaseTop"><span>{item.label}</span>{!item.available && <small>Coming soon</small>}</div>
+                    <div className="phaseTop"><span>{item.label}</span>{!item.available && <small>{t("Coming soon")}</small>}</div>
                     <p>{PHASE_DESCRIPTIONS[item.id]}</p>
                   </button>
                 ))}
@@ -501,20 +490,20 @@ export default function App() {
 
             <section className="workspaceSection">
               <div className="sectionTitleRow">
-                <div><span>02</span><h2>Define the matchup</h2></div>
-                <p>Choose the structures exactly as the staff sees them on the pitch.</p>
+                <div><span>02</span><h2>{t("Define the matchup")}</h2></div>
+                <p>{t("Choose the structures exactly as the staff sees them on the pitch.")}</p>
               </div>
               <div className="matchupGrid">
-                <FormationPicker label="Our shape" value={own} formations={formations} onChange={(value) => changeMatchup(setOwn, value)} accent="ownAccent" />
-                <div className="versusMark"><span>VS</span></div>
-                <FormationPicker label="Opponent shape" value={opp} formations={formations} onChange={(value) => changeMatchup(setOpp, value)} accent="oppAccent" />
+                <FormationPicker label={t("Our shape")} value={own} formations={formations} onChange={(value) => changeMatchup(setOwn, value)} accent="ownAccent" />
+                <div className="versusMark"><span>{t("VS")}</span></div>
+                <FormationPicker label={t("Opponent shape")} value={opp} formations={formations} onChange={(value) => changeMatchup(setOpp, value)} accent="oppAccent" />
               </div>
             </section>
 
             <section className="workspaceSection">
               <div className="sectionTitleRow">
-                <div><span>03</span><h2>Choose the tactical solution</h2></div>
-                <p>{phaseLabel(phase)} · {own} vs {opp}</p>
+                <div><span>03</span><h2>{t("Choose the tactical solution")}</h2></div>
+                <p>{phaseLabel(phase)} · {own} {t("vs")} {opp}</p>
               </div>
 
               {availableSolutions.length ? (
@@ -541,26 +530,26 @@ export default function App() {
                       onClick={() => handleAnalyze(variant)}
                       disabled={!variant}
                     >
-                      Generate <span>→</span>
+                      {t("Generate")} <span>→</span>
                     </button>
                     {availableSolutions.length > 1 && (
                       <button className="secondaryButton" type="button" onClick={() => setCompareOpen((prev) => !prev)}>
-                        {compareOpen ? "Close comparison" : "Compare solutions"}
+                        {compareOpen ? t("Close comparison") : t("Compare solutions")}
                       </button>
                     )}
                   </div>
 
                   {compareOpen && (
                     <div className="comparisonPanel">
-                      <div className="comparisonHeader"><span>Solution comparison</span><small>Use this before choosing what to show the staff.</small></div>
+                      <div className="comparisonHeader"><span>{t("Solution comparison")}</span><small>{t("Use this before choosing what to show the staff.")}</small></div>
                       <div className="comparisonGrid">
                         {availableSolutions.map((solution) => (
                           <div className="comparisonCard" key={solution.scenario_id}>
-                            <div className="solutionChoiceTop"><span className="solutionBadge">{solution.label}</span><span>{solution.profile?.risk} risk</span></div>
+                            <div className="solutionChoiceTop"><span className="solutionBadge">{solution.label}</span><span>{solution.profile?.risk} {t("risk")}</span></div>
                             <h3>{solution.title}</h3>
                             <p>{solution.objective}</p>
-                            <InfoList title="Core principles" items={solution.principles?.slice(0, 4)} />
-                            <button className="textButton" type="button" onClick={() => handleAnalyze(solution.variant)}>Open {solution.label}</button>
+                            <InfoList title={t("Core principles")} items={solution.principles?.slice(0, 4)} />
+                            <button className="textButton" type="button" onClick={() => handleAnalyze(solution.variant)}>{t("Open")} {solution.label}</button>
                           </div>
                         ))}
                       </div>
@@ -570,20 +559,20 @@ export default function App() {
               ) : (
                 <div className="unavailablePanel">
                   <div>
-                    <span className="availabilityPill">Not catalogued yet</span>
-                    <h3>{phaseLabel(phase)} · {own} vs {opp}</h3>
-                    <p>This combination is not in the deterministic catalog. Request it to help prioritise the next scenario.</p>
+                    <span className="availabilityPill">{t("Not catalogued yet")}</span>
+                    <h3>{phaseLabel(phase)} · {own} {t("vs")} {opp}</h3>
+                    <p>{t("This combination is not in the deterministic catalog. Request it to help prioritise the next scenario.")}</p>
                   </div>
                   <div className="requestBox">
                     <textarea
                       value={requestNote}
                       onChange={(e) => setRequestNote(e.target.value)}
-                      placeholder="Optional: add the specific tactical problem (e.g. high press, goalkeeper involved, no long ball)."
+                      placeholder={t("Optional: add the specific tactical problem (e.g. high press, goalkeeper involved, no long ball).")}
                     />
                     <button className="primaryButton" type="button" onClick={requestScenario} disabled={requestState === "sending" || requestState === "recorded"}>
-                      {requestState === "sending" ? "Saving…" : "Request this analysis"}
+                      {requestState === "sending" ? t("Saving…") : t("Request this analysis")}
                     </button>
-                    {requestState && <small role="status">{requestState === "recorded" ? "Request recorded." : requestState === "sending" ? "Saving…" : requestState}</small>}
+                    {requestState && <small role="status">{requestState === "recorded" ? t("Request recorded.") : requestState === "sending" ? t("Saving…") : requestState}</small>}
                   </div>
                 </div>
               )}
@@ -591,14 +580,14 @@ export default function App() {
 
             <section className="workspaceSection resultSection">
               <div className="sectionTitleRow">
-                <div><span>04</span><h2>Tactical result</h2></div>
+                <div><span>04</span><h2>{t("Tactical result")}</h2></div>
                 {currentAnalysis && (
                   <button
                     className={`favoriteButton ${favorites.includes(currentAnalysis.scenario_id) ? "active" : ""}`}
                     type="button"
                     onClick={() => toggleFavorite(currentAnalysis.scenario_id)}
                   >
-                    {favorites.includes(currentAnalysis.scenario_id) ? "★ Saved" : "☆ Save analysis"}
+                    {favorites.includes(currentAnalysis.scenario_id) ? t("★ Saved") : t("☆ Save analysis")}
                   </button>
                 )}
               </div>
@@ -609,35 +598,35 @@ export default function App() {
                 <div className="resultCard">
                   <div className="videoPanel">
                     <div className="videoHeader">
-                      <div><span>{currentAnalysis.phase_label}</span><strong>{currentAnalysis.own} <em>vs</em> {currentAnalysis.opp}</strong></div>
+                      <div><span>{currentAnalysis.phase_label}</span><strong>{currentAnalysis.own} <em>{t("vs")}</em> {currentAnalysis.opp}</strong></div>
                       <span className="solutionBadge">{currentAnalysis.label}</span>
                     </div>
                     {videoUrl ? (
                       <video key={videoUrl} src={videoUrl} controls playsInline className="analysisVideo"
-                        onError={() => { setVideoUrl(""); setMessage("The scenario video could not be loaded. Tactical information remains available."); }} />
+                        onError={() => { setVideoUrl(""); setMessage(t("The scenario video could not be loaded. Tactical information remains available.")); }} />
                     ) : (
-                      <EmptyState title="Video not connected">
-                        This scenario is available. Its video will be playable once media hosting is connected.
+                      <EmptyState title={t("Video not connected")}>
+                        {t("This scenario is available. Its video will be playable once media hosting is connected.")}
                       </EmptyState>
                     )}
                   </div>
                   <TacticalDetail solution={currentAnalysis} />
                 </div>
               ) : (
-                <EmptyState title="Your analysis will appear here">
-                  Select a validated solution and click Generate. The video will be paired with objective, principles, key actions, risks and coaching points.
+                <EmptyState title={t("Your analysis will appear here")}>
+                  {t("Select a validated solution and click Generate. The video will be paired with objective, principles, key actions, risks and coaching points.")}
                 </EmptyState>
               )}
 
               {currentAnalysis && (
                 <div className="feedbackPanel">
-                  <div><strong>Was this solution useful?</strong><span>Your feedback helps prioritise future tactical scenarios.</span></div>
-                  <input value={feedbackNote} onChange={(e) => setFeedbackNote(e.target.value)} placeholder="Optional coaching note" />
+                  <div><strong>{t("Was this solution useful?")}</strong><span>{t("Your feedback helps prioritise future tactical scenarios.")}</span></div>
+                  <input value={feedbackNote} onChange={(e) => setFeedbackNote(e.target.value)} placeholder={t("Optional coaching note")} />
                   <div className="feedbackActions">
-                    <button type="button" onClick={() => sendFeedback(true)} disabled={feedbackState === "sending" || feedbackState === "recorded"}>Useful ↑</button>
-                    <button type="button" onClick={() => sendFeedback(false)} disabled={feedbackState === "sending" || feedbackState === "recorded"}>Not useful ↓</button>
+                    <button type="button" onClick={() => sendFeedback(true)} disabled={feedbackState === "sending" || feedbackState === "recorded"}>{t("Useful ↑")}</button>
+                    <button type="button" onClick={() => sendFeedback(false)} disabled={feedbackState === "sending" || feedbackState === "recorded"}>{t("Not useful ↓")}</button>
                   </div>
-                  {feedbackState && <small role="status">{feedbackState === "recorded" ? "Feedback recorded. Thank you." : feedbackState === "sending" ? "Saving…" : feedbackState}</small>}
+                  {feedbackState && <small role="status">{feedbackState === "recorded" ? t("Feedback recorded. Thank you.") : feedbackState === "sending" ? t("Saving…") : feedbackState}</small>}
                 </div>
               )}
             </section>
@@ -647,13 +636,13 @@ export default function App() {
         {view === "library" && (
           <>
             <header className="workspaceHeader">
-              <div><div className="sectionEyebrow">TACTICAL KNOWLEDGE BASE</div><h1>Video Library</h1><p>Browse validated scenarios by phase, structure or tactical principle.</p></div>
-              <div className="catalogCounter"><strong>{libraryItems.length}</strong><span>matching solutions</span></div>
+              <div><div className="sectionEyebrow">{t("TACTICAL KNOWLEDGE BASE")}</div><h1>{t("Video Library")}</h1><p>{t("Browse validated scenarios by phase, structure or tactical principle.")}</p></div>
+              <div className="catalogCounter"><strong>{libraryItems.length}</strong><span>{t("matching solutions")}</span></div>
             </header>
             <div className="libraryToolbar">
-              <input value={librarySearch} onChange={(e) => setLibrarySearch(e.target.value)} placeholder="Search formation, principle, objective…" />
+              <input value={librarySearch} onChange={(e) => setLibrarySearch(e.target.value)} placeholder={t("Search formation, principle, objective…")} />
               <select value={libraryPhase} onChange={(e) => setLibraryPhase(e.target.value)}>
-                <option value="all">All phases</option>
+                <option value="all">{t("All phases")}</option>
                 {catalog?.phases?.map((item) => <option key={item} value={item}>{phaseLabel(item)}</option>)}
               </select>
             </div>
@@ -662,7 +651,7 @@ export default function App() {
                 <article className="libraryCard" key={item.scenario_id}>
                   <div className="libraryVisual">
                     <FormationPitch formation={item.own} />
-                    <div className="libraryVs"><span>{item.own}</span><em>vs</em><span>{item.opp}</span></div>
+                    <div className="libraryVs"><span>{item.own}</span><em>{t("vs")}</em><span>{item.opp}</span></div>
                   </div>
                   <div className="libraryBody">
                     <div className="libraryMeta"><span>{item.phase_label}</span><span>{item.label}</span></div>
@@ -670,8 +659,8 @@ export default function App() {
                     <p>{item.objective}</p>
                     <div className="principleChips smallChips">{item.principles?.slice(0, 3).map((p) => <span key={p}>{p}</span>)}</div>
                     <div className="libraryActions">
-                      <button className="secondaryButton" type="button" onClick={() => openScenario(item)}>Open analysis</button>
-                      <button className={`iconButton ${favorites.includes(item.scenario_id) ? "active" : ""}`} type="button" onClick={() => toggleFavorite(item.scenario_id)} aria-label="Toggle favorite">
+                      <button className="secondaryButton" type="button" onClick={() => openScenario(item)}>{t("Open analysis")}</button>
+                      <button className={`iconButton ${favorites.includes(item.scenario_id) ? "active" : ""}`} type="button" onClick={() => toggleFavorite(item.scenario_id)} aria-label={t("Toggle favorite")}>
                         {favorites.includes(item.scenario_id) ? "★" : "☆"}
                       </button>
                     </div>
@@ -679,44 +668,44 @@ export default function App() {
                 </article>
               ))}
             </div>
-            {!libraryItems.length && <EmptyState title="No matching scenarios">Try another phase, formation or tactical keyword.</EmptyState>}
+            {!libraryItems.length && <EmptyState title={t("No matching scenarios")}>{t("Try another phase, formation or tactical keyword.")}</EmptyState>}
           </>
         )}
 
         {view === "history" && (
           <>
             <header className="workspaceHeader">
-              <div><div className="sectionEyebrow">PERSONAL WORKSPACE</div><h1>My Analyses</h1><p>Return to recent scenarios and keep the most useful solutions close.</p></div>
-              <div className="catalogCounter"><strong>{favorites.length}</strong><span>saved favorites</span></div>
+              <div><div className="sectionEyebrow">{t("PERSONAL WORKSPACE")}</div><h1>{t("My Analyses")}</h1><p>{t("Return to recent scenarios and keep the most useful solutions close.")}</p></div>
+              <div className="catalogCounter"><strong>{favorites.length}</strong><span>{t("saved favorites")}</span></div>
             </header>
 
             <section className="historySection">
-              <div className="sectionTitleRow"><div><span>★</span><h2>Saved</h2></div></div>
+              <div className="sectionTitleRow"><div><span>★</span><h2>{t("Saved")}</h2></div></div>
               <div className="historyGrid">
                 {catalog?.combos?.filter((item) => favorites.includes(item.scenario_id)).map((item) => (
                   <button className="historyCard" type="button" key={item.scenario_id} onClick={() => openScenario(item)}>
-                    <div><span>{item.phase_label} · {item.label}</span><strong>{item.own} vs {item.opp}</strong></div><p>{item.title}</p><em>Open →</em>
+                    <div><span>{item.phase_label} · {item.label}</span><strong>{item.own} {t("vs")} {item.opp}</strong></div><p>{item.title}</p><em>{t("Open →")}</em>
                   </button>
                 ))}
               </div>
-              {!favorites.length && <p className="muted">Save a tactical result or library item and it will appear here.</p>}
+              {!favorites.length && <p className="muted">{t("Save a tactical result or library item and it will appear here.")}</p>}
             </section>
 
             <section className="historySection">
-              <div className="sectionTitleRow"><div><span>↺</span><h2>Recent analyses</h2></div><p>Stored locally on this device.</p></div>
+              <div className="sectionTitleRow"><div><span>↺</span><h2>{t("Recent analyses")}</h2></div><p>{t("Stored locally on this device.")}</p></div>
               <div className="historyList">
-                {history.map((item) => (
+                {history.map((stored) => ({ ...stored, ...catalog.combos.find((scenario) => scenario.scenario_id === stored.scenario_id) })).map((item) => (
                   <button className="historyRow" type="button" key={`${item.scenario_id}-${item.created_at}`} onClick={() => openScenario(item)}>
-                    <span className="historyDate">{new Date(item.created_at).toLocaleDateString()}</span>
+                    <span className="historyDate">{new Date(item.created_at).toLocaleDateString("it-IT")}</span>
                     <span className="historyPhase">{item.phase_label}</span>
-                    <strong>{item.own} vs {item.opp}</strong>
+                    <strong>{item.own} {t("vs")} {item.opp}</strong>
                     <span>{item.label}</span>
                     <em>{item.title}</em>
                     <b>→</b>
                   </button>
                 ))}
               </div>
-              {!history.length && <EmptyState title="No analyses yet">Run your first tactical scenario and it will be remembered here.</EmptyState>}
+              {!history.length && <EmptyState title={t("No analyses yet")}>{t("Run your first tactical scenario and it will be remembered here.")}</EmptyState>}
             </section>
           </>
         )}
@@ -724,44 +713,44 @@ export default function App() {
         {view === "methodology" && (
           <>
             <header className="workspaceHeader">
-              <div><div className="sectionEyebrow">LINE B · CLUB ENVIRONMENT</div><h1>Club Methodology</h1><p>A separate workspace for each club's own game model, principles and development pathway.</p></div>
-              <div className="roadmapBadge">Product roadmap</div>
+              <div><div className="sectionEyebrow">{t("LINE B · CLUB ENVIRONMENT")}</div><h1>{t("Club Methodology")}</h1><p>{t("A separate workspace for each club's own game model, principles and development pathway.")}</p></div>
+              <div className="roadmapBadge">{t("Product roadmap")}</div>
             </header>
 
             <div className="methodologyHero">
               <div>
-                <span className="availabilityPill">Architecture direction</span>
-                <h2>ProAnalyst is the platform. The club owns the methodology.</h2>
-                <p>This area is intentionally separate from Tactical Analysis. It will organise a club's principles, age-group progression, training content and video references without imposing a universal ProAnalyst methodology.</p>
+                <span className="availabilityPill">{t("Architecture direction")}</span>
+                <h2>{t("ProAnalyst is the platform. The club owns the methodology.")}</h2>
+                <p>{t("This area is intentionally separate from Tactical Analysis. It will organise a club's principles, age-group progression, training content and video references without imposing a universal ProAnalyst methodology.")}</p>
               </div>
               <div className="methodologyMap">
-                {["Game Model", "Principles", "Age Groups", "Training Sessions", "Video Examples", "Player Development"].map((item, index) => (
+                {[t("Game Model"), t("Principles"), t("Age Groups"), t("Training Sessions"), t("Video Examples"), t("Player Development")].map((item, index) => (
                   <div key={item}><span>0{index + 1}</span><strong>{item}</strong></div>
                 ))}
               </div>
             </div>
 
             <div className="futureGrid">
-              <article><span>01</span><h3>Human methodology first</h3><p>Staff define the content and structure before generative AI is allowed to extend it.</p></article>
-              <article><span>02</span><h3>Club-specific knowledge</h3><p>Every organisation keeps its own vocabulary, priorities, progressions and references.</p></article>
-              <article><span>03</span><h3>AI on the same structure</h3><p>The future engine can retrieve and generate sessions or explanations without losing the club's identity.</p></article>
+              <article><span>01</span><h3>{t("Human methodology first")}</h3><p>{t("Staff define the content and structure before generative AI is allowed to extend it.")}</p></article>
+              <article><span>02</span><h3>{t("Club-specific knowledge")}</h3><p>{t("Every organisation keeps its own vocabulary, priorities, progressions and references.")}</p></article>
+              <article><span>03</span><h3>{t("AI on the same structure")}</h3><p>{t("The future engine can retrieve and generate sessions or explanations without losing the club's identity.")}</p></article>
             </div>
           </>
         )}
 
         {view === "insights" && staff && <section>
-          <header className="workspaceHeader"><div><div className="sectionEyebrow">STAFF ONLY</div><h1>Staff Insights</h1><p>Feedback and requests stored privately.</p></div></header>
+          <header className="workspaceHeader"><div><div className="sectionEyebrow">{t("STAFF ONLY")}</div><h1>{t("Staff Insights")}</h1><p>{t("Feedback and requests stored privately.")}</p></div></header>
           {insightsError && <p role="alert">{insightsError}</p>}
-          {!insights && !insightsError && <p role="status">Loading insights…</p>}
+          {!insights && !insightsError && <p role="status">{t("Loading insights…")}</p>}
           {insights && <><div className="historyGrid">
-            <div className="historyCard"><strong>{insights.feedback_count}</strong><p>Feedback submissions</p></div>
-            <div className="historyCard"><strong>{insights.positive_feedback}</strong><p>Positive feedback</p></div>
-            <div className="historyCard"><strong>{insights.scenario_requests}</strong><p>Scenario requests</p></div>
-          </div><h2>Most requested scenarios</h2><ul>{insights.top_requested_scenarios.map(([key, count]) => <li key={key}>{key.replaceAll("|", " · ")} — {count}</li>)}</ul></>}
+            <div className="historyCard"><strong>{insights.feedback_count}</strong><p>{t("Feedback submissions")}</p></div>
+            <div className="historyCard"><strong>{insights.positive_feedback}</strong><p>{t("Positive feedback")}</p></div>
+            <div className="historyCard"><strong>{insights.scenario_requests}</strong><p>{t("Scenario requests")}</p></div>
+          </div><h2>{t("Most requested scenarios")}</h2><ul>{insights.top_requested_scenarios.map(([key, count]) => <li key={key}>{requestLabel(key)} — {count}</li>)}</ul></>}
         </section>}
         <footer className="appFooter">
-          <span>ProAnalyst Labs v1.1 · Tactical Intelligence Platform</span>
-          <span>Deterministic video layer today · Motor IA architecture next</span>
+          <span>{t("ProAnalyst Labs v1.1 · Tactical Intelligence Platform")}</span>
+          <span>{t("Deterministic video layer today · Motor IA architecture next")}</span>
         </footer>
       </main>
     </div>

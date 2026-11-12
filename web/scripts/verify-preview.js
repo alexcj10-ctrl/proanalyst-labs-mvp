@@ -20,12 +20,12 @@ const report = { preview: origin, videos: [], checks: [] };
 try {
   const navigation = await page.goto(origin);
   console.log(`Preview HTTP ${navigation.status()}`);
-  await page.getByRole('button', { name: 'Enter Demo' }).click();
-  await page.getByRole('button', { name: 'Skip intro' }).click();
-  await page.getByRole('button', { name: 'Generate', exact: false }).click();
+  await page.getByRole('button', { name: "Entra nella demo" }).click();
+  await page.getByRole('button', { name: "Salta introduzione" }).click();
+  await page.getByRole('button', { name: "Genera", exact: false }).click();
   for (const item of catalog.combos) {
-    await page.getByRole('button', { name: 'Video Library' }).click();
-    await page.locator('.libraryCard').nth(catalog.combos.indexOf(item)).getByRole('button', { name: 'Open analysis' }).click();
+    await page.getByRole('button', { name: "Libreria video" }).click();
+    await page.locator('.libraryCard').nth(catalog.combos.indexOf(item)).getByRole('button', { name: "Apri analisi" }).click();
     const video = page.locator('.analysisVideo');
     assert.equal(await video.getAttribute('src'), media[item.video].url);
     await video.evaluate(async (el) => {

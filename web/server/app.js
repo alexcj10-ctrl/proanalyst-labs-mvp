@@ -2,6 +2,7 @@ import { randomBytes, createHash, createHmac, scrypt as scryptCallback, timingSa
 import { promisify } from 'node:util';
 import catalog from '../src/data/catalog.json' with { type: 'json' };
 import { privateStore } from './storage.js';
+import { errorText } from '../src/i18n/index.js';
 
 const scrypt = promisify(scryptCallback);
 const cookieName = '__Host-proanalyst_staff';
@@ -36,7 +37,7 @@ export function createHandler({ getStore = privateStore, env = process.env, now 
   return async function handler(req, res) {
     res.setHeader('Cache-Control', 'no-store');
     res.setHeader('X-Content-Type-Options', 'nosniff');
-    const send = (status, body) => res.status(status).json(body);
+    const send = (status, body) => res.status(status).json(body.error ? { ...body, error: errorText(body.error) } : body);
     const action = new URL(req.url, 'https://localhost').pathname.split('/').pop();
     const allowed = { login: 'POST', logout: 'POST', session: 'GET', feedback: 'POST', 'scenario-requests': 'POST', insights: 'GET' };
     if (!allowed[action]) return send(404, { error: 'Not found' });

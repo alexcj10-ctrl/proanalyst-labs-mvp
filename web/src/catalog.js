@@ -1,7 +1,11 @@
-import catalog from './data/catalog.json' with { type: 'json' };
+import sourceCatalog from './data/catalog.json' with { type: 'json' };
 import media from './data/media.json' with { type: 'json' };
+import { localizeScenario, phaseLabel } from './i18n/index.js';
 
-export { catalog };
+export const catalog = { ...sourceCatalog,
+  phase_roadmap: sourceCatalog.phase_roadmap.map((item) => ({ ...item, label: phaseLabel(item.id) })),
+  combos: sourceCatalog.combos.map(localizeScenario),
+};
 
 export function findScenario(phase, own, opp, variant) {
   return catalog.combos.find((item) => item.phase === phase && item.own === own &&
