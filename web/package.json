@@ -7,6 +7,10 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
+    "test": "node --test tests/*.test.js",
+    "test:e2e": "playwright test",
+    "catalog:export": "python ../scripts/export_catalog.py",
+    "catalog:check": "python ../scripts/export_catalog.py --check",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -15,6 +19,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
+    "@playwright/test": "^1.65.0",
     "@types/react": "^19.2.5",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.1",

@@ -1,5 +1,9 @@
 # ProAnalyst Labs v1.1 — Current Architecture
 
+> The sections below describe the original FastAPI deployment, retained for rollback.
+> The independent React/Vite migration and its current limitations are documented in
+> [MIGRATION_REACT_VERCEL.md](MIGRATION_REACT_VERCEL.md).
+
 ## Product principle
 
 ProAnalyst Labs should answer a coaching problem, not merely retrieve a video file.

@@ -1,7 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import "./App.css";
 
-const API_BASE = (import.meta.env.VITE_API_URL || (import.meta.env.DEV ? "http://localhost:8000" : "")).replace(/\/$/, "");
+import { catalog, findScenario, scenarioVideoUrl } from "./catalog";
+import { SERVER_UNAVAILABLE } from "./services/server";
+const MEDIA_BASE = import.meta.env.VITE_MEDIA_BASE_URL || "";
 const WHITEPAPER_URL = "/ProAnalystLabs_Whitepaper.pdf";
 const INTRO_VIDEO_URL = "/intro.mp4";
 const STORAGE_HISTORY = "proanalyst_history_v11";
@@ -30,7 +32,8 @@ const FORMATION_LINES = {
 function readStoredJson(key, fallback) {
   try {
     const raw = localStorage.getItem(key);
-    return raw ? JSON.parse(raw) : fallback;
+    const parsed = raw ? JSON.parse(raw) : fallback;
+    return Array.isArray(parsed) ? parsed.filter((item) => item != null) : fallback;
   } catch {
     return fallback;
   }
@@ -166,24 +169,17 @@ function EmptyState({ title, children }) {
 }
 
 export default function App() {
-  const [token, setToken] = useState(localStorage.getItem("token") || "");
-  const [catalog, setCatalog] = useState(null);
-  const [loadingCatalog, setLoadingCatalog] = useState(false);
-  const [authError, setAuthError] = useState("");
+  const [isAuthed, setIsAuthed] = useState(false);
   const [staffOpen, setStaffOpen] = useState(false);
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
   const [showIntro, setShowIntro] = useState(false);
 
   const [view, setView] = useState("analyze");
   const [phase, setPhase] = useState("build_up");
   const [own, setOwn] = useState("4-3-3");
   const [opp, setOpp] = useState("4-2-3-1");
-  const [variant, setVariant] = useState("");
+  const [selectedVariant, setVariant] = useState("");
   const [compareOpen, setCompareOpen] = useState(false);
 
-  const [jobId, setJobId] = useState("");
-  const [jobStatus, setJobStatus] = useState("");
   const [videoUrl, setVideoUrl] = useState("");
   const [currentAnalysis, setCurrentAnalysis] = useState(null);
   const [message, setMessage] = useState("");
@@ -198,98 +194,37 @@ export default function App() {
   const [librarySearch, setLibrarySearch] = useState("");
   const [libraryPhase, setLibraryPhase] = useState("all");
 
-  const isAuthed = Boolean(token);
-  const authHeaders = useMemo(
-    () => (token ? { Authorization: `Bearer ${token}` } : {}),
-    [token]
-  );
-
-  const logout = () => {
-    localStorage.removeItem("token");
-    setToken("");
-    setCatalog(null);
+  const resetResult = () => {
     setCurrentAnalysis(null);
     setVideoUrl("");
-    setJobId("");
-    setJobStatus("");
+    setMessage("");
+    setRequestState("");
+    setFeedbackState("");
+    setFeedbackNote("");
+  };
+
+  const changeMatchup = (setter, value) => {
+    setter(value);
+    setVariant("");
+    setCompareOpen(false);
+    resetResult();
+  };
+
+  const logout = () => {
+    setIsAuthed(false);
     setShowIntro(false);
-    setAuthError("");
+    resetResult();
   };
 
-  const loadCatalog = async (jwt) => {
-    setLoadingCatalog(true);
+  const handleDemoLogin = () => {
+    setIsAuthed(true);
     try {
-      const res = await fetch(`${API_BASE}/catalog`, {
-        headers: { Authorization: `Bearer ${jwt}` },
-      });
-      if (res.status === 401) throw new Error("auth");
-      if (!res.ok) throw new Error("catalog");
-      const data = await res.json();
-      setCatalog(data);
-
-      const defaultPhase = data.phases?.includes("build_up") ? "build_up" : data.phases?.[0];
-      if (defaultPhase) setPhase((prev) => data.phases.includes(prev) ? prev : defaultPhase);
-      if (data.formations?.length) {
-        setOwn((prev) => data.formations.includes(prev) ? prev : data.formations[0]);
-        setOpp((prev) => data.formations.includes(prev) ? prev : data.formations[0]);
-      }
-    } finally {
-      setLoadingCatalog(false);
-    }
+      if (!sessionStorage.getItem("proanalyst_intro_seen")) setShowIntro(true);
+    } catch { setShowIntro(true); }
   };
-
-  const completeAuth = async (jwt) => {
-    localStorage.setItem("token", jwt);
-    setToken(jwt);
-    await loadCatalog(jwt);
-    if (!sessionStorage.getItem("proanalyst_intro_seen")) setShowIntro(true);
-  };
-
-  const handleDemoLogin = async () => {
-    setAuthError("");
-    try {
-      const res = await fetch(`${API_BASE}/demo-login`, { method: "POST" });
-      if (!res.ok) throw new Error("demo");
-      const data = await res.json();
-      await completeAuth(data.access_token);
-    } catch {
-      setAuthError("Unable to connect to the ProAnalyst API. Check VITE_API_URL and the backend deployment.");
-    }
-  };
-
-  const handleStaffLogin = async (event) => {
-    event.preventDefault();
-    setAuthError("");
-    try {
-      const body = new URLSearchParams({ username, password });
-      const res = await fetch(`${API_BASE}/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body,
-      });
-      if (!res.ok) {
-        setAuthError("Invalid staff credentials.");
-        return;
-      }
-      const data = await res.json();
-      await completeAuth(data.access_token);
-    } catch {
-      setAuthError("Network error while signing in.");
-    }
-  };
-
-  useEffect(() => {
-    if (!token) return;
-    loadCatalog(token).catch((error) => {
-      if (error?.message === "auth") logout();
-      else setMessage("The tactical catalog could not be loaded.");
-    });
-    // Only restore the session once at mount.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   const closeIntro = () => {
-    sessionStorage.setItem("proanalyst_intro_seen", "1");
+    try { sessionStorage.setItem("proanalyst_intro_seen", "1"); } catch { /* Session storage may be disabled. */ }
     setShowIntro(false);
   };
 
@@ -298,24 +233,10 @@ export default function App() {
     return catalog.combos.filter(
       (combo) => combo.phase === phase && combo.own === own && combo.opp === opp
     );
-  }, [catalog, phase, own, opp]);
-
-  useEffect(() => {
-    const valid = availableSolutions.some((item) => item.variant === variant);
-    if (!valid) setVariant(availableSolutions[0]?.variant || "");
-  }, [availableSolutions, variant]);
-
-  useEffect(() => {
-    setCompareOpen(false);
-    setCurrentAnalysis(null);
-    setVideoUrl("");
-    setJobId("");
-    setJobStatus("");
-    setMessage("");
-    setRequestState("");
-    setFeedbackState("");
-    setFeedbackNote("");
   }, [phase, own, opp]);
+
+  const variant = availableSolutions.some((item) => item.variant === selectedVariant)
+    ? selectedVariant : availableSolutions[0]?.variant || "";
 
   const saveHistory = (solution) => {
     const entry = {
@@ -332,116 +253,36 @@ export default function App() {
     };
     setHistory((prev) => {
       const next = [entry, ...prev.filter((item) => item.scenario_id !== entry.scenario_id)].slice(0, 24);
-      localStorage.setItem(STORAGE_HISTORY, JSON.stringify(next));
+      try { localStorage.setItem(STORAGE_HISTORY, JSON.stringify(next)); } catch { /* Keep in-memory history when storage is unavailable. */ }
       return next;
     });
   };
 
-  const handleAnalyze = async (requestedVariant = variant) => {
-    if (!requestedVariant) return;
-    setMessage("");
-    setVideoUrl("");
-    setCurrentAnalysis(null);
-    setJobStatus("queued");
-    setFeedbackState("");
-    try {
-      const res = await fetch(`${API_BASE}/generate`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", ...authHeaders },
-        body: JSON.stringify({ phase, own, opp, variant: requestedVariant }),
-      });
-      if (res.status === 401) return logout();
-      if (!res.ok) throw new Error("generate");
-      const data = await res.json();
-      setVariant(requestedVariant);
-      setJobId(data.job_id);
-    } catch {
-      setJobStatus("");
-      setMessage("The analysis could not be started. Check the API connection and try again.");
+  const showScenario = (solution) => {
+    resetResult();
+    if (!solution) {
+      setMessage("This scenario is not available in the deterministic catalog yet.");
+      return;
     }
+    setVariant(solution.variant);
+    setCurrentAnalysis(solution);
+    setVideoUrl(scenarioVideoUrl(solution, MEDIA_BASE));
+    saveHistory(solution);
   };
 
-  useEffect(() => {
-    if (!jobId || !token) return;
-    let cancelled = false;
-    let intervalId;
-
-    const poll = async () => {
-      try {
-        const res = await fetch(`${API_BASE}/status/${jobId}`, { headers: authHeaders });
-        if (res.status === 401) return logout();
-        if (!res.ok) return;
-        const data = await res.json();
-        if (cancelled) return;
-        setJobStatus(data.status);
-
-        if (data.status === "done") {
-          const fullVideoUrl = data.video_url.startsWith("http")
-            ? data.video_url
-            : `${API_BASE}${data.video_url}`;
-          setVideoUrl(fullVideoUrl);
-          setCurrentAnalysis(data.solution);
-          saveHistory(data.solution);
-          clearInterval(intervalId);
-        } else if (data.status === "no_sequence") {
-          setMessage("This scenario is not available in the deterministic catalog yet.");
-          clearInterval(intervalId);
-        }
-      } catch {
-        // Keep polling: short transient failures should not destroy the session.
-      }
-    };
-
-    poll();
-    intervalId = window.setInterval(poll, 1000);
-    return () => {
-      cancelled = true;
-      window.clearInterval(intervalId);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [jobId, token]);
-
-  const requestScenario = async () => {
-    setRequestState("sending");
-    try {
-      const res = await fetch(`${API_BASE}/scenario-requests`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", ...authHeaders },
-        body: JSON.stringify({ phase, own, opp, note: requestNote }),
-      });
-      if (!res.ok) throw new Error("request");
-      setRequestState("sent");
-    } catch {
-      setRequestState("error");
-    }
+  const handleAnalyze = (requestedVariant = variant) => {
+    showScenario(findScenario(phase, own, opp, requestedVariant));
   };
 
-  const sendFeedback = async (useful) => {
-    if (!currentAnalysis) return;
-    setFeedbackState("sending");
-    try {
-      const res = await fetch(`${API_BASE}/feedback`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", ...authHeaders },
-        body: JSON.stringify({
-          scenario_id: currentAnalysis.scenario_id,
-          useful,
-          note: feedbackNote,
-        }),
-      });
-      if (!res.ok) throw new Error("feedback");
-      setFeedbackState(useful ? "positive" : "negative");
-    } catch {
-      setFeedbackState("error");
-    }
-  };
+  const requestScenario = () => setRequestState("unavailable");
+  const sendFeedback = () => setFeedbackState("unavailable");
 
   const toggleFavorite = (scenarioId) => {
     setFavorites((prev) => {
       const next = prev.includes(scenarioId)
         ? prev.filter((id) => id !== scenarioId)
         : [...prev, scenarioId];
-      localStorage.setItem(STORAGE_FAVORITES, JSON.stringify(next));
+      try { localStorage.setItem(STORAGE_FAVORITES, JSON.stringify(next)); } catch { /* Keep in-memory favorites when storage is unavailable. */ }
       return next;
     });
   };
@@ -452,6 +293,8 @@ export default function App() {
     setOpp(item.opp);
     setVariant(item.variant);
     setView("analyze");
+    setCompareOpen(false);
+    showScenario(findScenario(item.phase, item.own, item.opp, item.variant));
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -463,7 +306,7 @@ export default function App() {
       const text = `${item.own} ${item.opp} ${item.title} ${item.objective} ${item.principles?.join(" ")}`.toLowerCase();
       return phaseMatch && (!query || text.includes(query));
     });
-  }, [catalog, libraryPhase, librarySearch]);
+  }, [libraryPhase, librarySearch]);
 
   if (!isAuthed) {
     return (
@@ -502,21 +345,12 @@ export default function App() {
             </button>
 
             {staffOpen && (
-              <form className="staffForm" onSubmit={handleStaffLogin}>
-                <label>
-                  <span>User</span>
-                  <input value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="username" />
-                </label>
-                <label>
-                  <span>Password</span>
-                  <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" />
-                </label>
-                <button className="secondaryButton" type="submit">Sign in</button>
-              </form>
+              <div className="staffForm" role="status">
+                Staff login is not available yet. Server authentication is planned; no credentials are collected.
+              </div>
             )}
 
-            {authError && <div className="errorNotice">{authError}</div>}
-            <div className="loginFoot">Secure API access · Protected tactical video delivery</div>
+            <div className="loginFoot">Public deterministic demo · No login required</div>
           </div>
         </section>
       </main>
@@ -545,7 +379,7 @@ export default function App() {
 
   const formations = catalog?.formations || Object.keys(FORMATION_LINES);
   const phaseRoadmap = catalog?.phase_roadmap || [];
-  const loading = loadingCatalog && !catalog;
+
 
   return (
     <div className="appFrame">
@@ -590,11 +424,7 @@ export default function App() {
       </div>
 
       <main className="mainWorkspace">
-        {loading ? (
-          <div className="loadingScreen"><span className="spinner" /> Loading tactical catalog…</div>
-        ) : null}
-
-        {!loading && view === "analyze" && (
+        {view === "analyze" && (
           <>
             <header className="workspaceHeader">
               <div>
@@ -617,7 +447,7 @@ export default function App() {
                     type="button"
                     className={`phaseCard ${phase === item.id ? "active" : ""} ${!item.available ? "locked" : ""}`}
                     disabled={!item.available}
-                    onClick={() => setPhase(item.id)}
+                    onClick={() => changeMatchup(setPhase, item.id)}
                   >
                     <div className="phaseTop"><span>{item.label}</span>{!item.available && <small>Coming soon</small>}</div>
                     <p>{PHASE_DESCRIPTIONS[item.id]}</p>
@@ -632,9 +462,9 @@ export default function App() {
                 <p>Choose the structures exactly as the staff sees them on the pitch.</p>
               </div>
               <div className="matchupGrid">
-                <FormationPicker label="Our shape" value={own} formations={formations} onChange={setOwn} accent="ownAccent" />
+                <FormationPicker label="Our shape" value={own} formations={formations} onChange={(value) => changeMatchup(setOwn, value)} accent="ownAccent" />
                 <div className="versusMark"><span>VS</span></div>
-                <FormationPicker label="Opponent shape" value={opp} formations={formations} onChange={setOpp} accent="oppAccent" />
+                <FormationPicker label="Opponent shape" value={opp} formations={formations} onChange={(value) => changeMatchup(setOpp, value)} accent="oppAccent" />
               </div>
             </section>
 
@@ -656,8 +486,6 @@ export default function App() {
                           setVariant(solution.variant);
                           setCurrentAnalysis(null);
                           setVideoUrl("");
-                          setJobId("");
-                          setJobStatus("");
                           setMessage("");
                         }}
                       />
@@ -668,9 +496,9 @@ export default function App() {
                       className="primaryButton"
                       type="button"
                       onClick={() => handleAnalyze(variant)}
-                      disabled={!variant || jobStatus === "queued" || jobStatus === "processing"}
+                      disabled={!variant}
                     >
-                      {jobStatus === "queued" || jobStatus === "processing" ? <><span className="spinner" /> Analysing…</> : <>Analyse Scenario <span>→</span></>}
+                      Generate <span>→</span>
                     </button>
                     {availableSolutions.length > 1 && (
                       <button className="secondaryButton" type="button" onClick={() => setCompareOpen((prev) => !prev)}>
@@ -701,7 +529,7 @@ export default function App() {
                   <div>
                     <span className="availabilityPill">Not catalogued yet</span>
                     <h3>{phaseLabel(phase)} · {own} vs {opp}</h3>
-                    <p>This combination is not a dead end anymore. Request it and use demand to prioritise the next ProAnalyst scenario.</p>
+                    <p>This combination is not in the deterministic catalog. Scenario requests are not available yet.</p>
                   </div>
                   <div className="requestBox">
                     <textarea
@@ -709,10 +537,10 @@ export default function App() {
                       onChange={(e) => setRequestNote(e.target.value)}
                       placeholder="Optional: add the specific tactical problem (e.g. high press, goalkeeper involved, no long ball)."
                     />
-                    <button className="primaryButton" type="button" onClick={requestScenario} disabled={requestState === "sending" || requestState === "sent"}>
-                      {requestState === "sent" ? "Request recorded ✓" : requestState === "sending" ? "Recording…" : "Request this analysis"}
+                    <button className="primaryButton" type="button" onClick={requestScenario} >
+                      Scenario requests · unavailable
                     </button>
-                    {requestState === "error" && <small className="errorText">The request could not be recorded.</small>}
+                    {requestState && <small role="status">{SERVER_UNAVAILABLE}</small>}
                   </div>
                 </div>
               )}
@@ -734,40 +562,46 @@ export default function App() {
 
               {message && <div className="errorNotice">{message}</div>}
 
-              {currentAnalysis && videoUrl ? (
+              {currentAnalysis ? (
                 <div className="resultCard">
                   <div className="videoPanel">
                     <div className="videoHeader">
                       <div><span>{currentAnalysis.phase_label}</span><strong>{currentAnalysis.own} <em>vs</em> {currentAnalysis.opp}</strong></div>
                       <span className="solutionBadge">{currentAnalysis.label}</span>
                     </div>
-                    <video key={videoUrl} src={videoUrl} controls playsInline className="analysisVideo" />
+                    {videoUrl ? (
+                      <video key={videoUrl} src={videoUrl} controls playsInline className="analysisVideo"
+                        onError={() => { setVideoUrl(""); setMessage("The scenario video could not be loaded. Tactical information remains available."); }} />
+                    ) : (
+                      <EmptyState title="Video not connected">
+                        This scenario is available. Its video will be playable once media hosting is connected.
+                      </EmptyState>
+                    )}
                   </div>
                   <TacticalDetail solution={currentAnalysis} />
                 </div>
               ) : (
                 <EmptyState title="Your analysis will appear here">
-                  Select a validated solution and click Analyse Scenario. The video will be paired with objective, principles, key actions, risks and coaching points.
+                  Select a validated solution and click Generate. The video will be paired with objective, principles, key actions, risks and coaching points.
                 </EmptyState>
               )}
 
               {currentAnalysis && (
                 <div className="feedbackPanel">
-                  <div><strong>Was this solution useful?</strong><span>Your feedback guides which tactical problems ProAnalyst develops next.</span></div>
+                  <div><strong>Was this solution useful?</strong><span>Feedback is not available yet. No notes or ratings are sent.</span></div>
                   <input value={feedbackNote} onChange={(e) => setFeedbackNote(e.target.value)} placeholder="Optional coaching note" />
                   <div className="feedbackActions">
-                    <button type="button" onClick={() => sendFeedback(true)} disabled={feedbackState === "sending"}>Useful ↑</button>
-                    <button type="button" onClick={() => sendFeedback(false)} disabled={feedbackState === "sending"}>Not useful ↓</button>
+                    <button type="button" onClick={() => sendFeedback(true)}>Useful ↑</button>
+                    <button type="button" onClick={() => sendFeedback(false)}>Not useful ↓</button>
                   </div>
-                  {(feedbackState === "positive" || feedbackState === "negative") && <small>Feedback recorded. Thank you.</small>}
-                  {feedbackState === "error" && <small className="errorText">Feedback could not be recorded.</small>}
+                  {feedbackState && <small role="status">{SERVER_UNAVAILABLE}</small>}
                 </div>
               )}
             </section>
           </>
         )}
 
-        {!loading && view === "library" && (
+        {view === "library" && (
           <>
             <header className="workspaceHeader">
               <div><div className="sectionEyebrow">TACTICAL KNOWLEDGE BASE</div><h1>Video Library</h1><p>Browse validated scenarios by phase, structure or tactical principle.</p></div>
@@ -806,7 +640,7 @@ export default function App() {
           </>
         )}
 
-        {!loading && view === "history" && (
+        {view === "history" && (
           <>
             <header className="workspaceHeader">
               <div><div className="sectionEyebrow">PERSONAL WORKSPACE</div><h1>My Analyses</h1><p>Return to recent scenarios and keep the most useful solutions close.</p></div>
@@ -844,7 +678,7 @@ export default function App() {
           </>
         )}
 
-        {!loading && view === "methodology" && (
+        {view === "methodology" && (
           <>
             <header className="workspaceHeader">
               <div><div className="sectionEyebrow">LINE B · CLUB ENVIRONMENT</div><h1>Club Methodology</h1><p>A separate workspace for each club's own game model, principles and development pathway.</p></div>

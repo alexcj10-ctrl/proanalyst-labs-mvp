@@ -1,4 +1,5 @@
 from pathlib import Path
+import json
 import unittest
 
 try:
@@ -8,6 +9,18 @@ except ImportError:  # Allows `python backend/test_catalog.py` too.
 
 
 class TacticalCatalogTests(unittest.TestCase):
+    def test_export_preserves_all_original_data(self):
+        exported = json.loads((Path(__file__).resolve().parents[1] / "web/src/data/catalog.json").read_text(encoding="utf-8"))
+        self.assertEqual(exported, build_catalog())
+        self.assertEqual(len(exported["combos"]), 24)
+        self.assertEqual(len({item["scenario_id"] for item in exported["combos"]}), 24)
+        self.assertEqual(sum(item["phase"] == "build_up" for item in exported["combos"]), 19)
+        self.assertEqual(sum(item["phase"] == "finishing" for item in exported["combos"]), 5)
+        for item in exported["combos"]:
+            key = tuple(item[field] for field in ("phase", "own", "opp", "variant"))
+            self.assertEqual(item["video"], SEQUENCE_INDEX[key])
+            self.assertEqual({k: v for k, v in item.items() if k not in ("video", "press")}, get_solution_metadata(*key))
+
     def test_every_catalog_video_exists(self):
         videos_dir = Path(__file__).resolve().parent / "videos"
         missing = [name for name in SEQUENCE_INDEX.values() if not (videos_dir / name).is_file()]
