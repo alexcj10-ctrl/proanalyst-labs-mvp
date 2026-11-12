@@ -18,12 +18,13 @@ const errors = [];
 page.on('pageerror', (error) => errors.push(error.message));
 const report = { preview: origin, videos: [], checks: [] };
 try {
-  await page.goto(origin);
+  const navigation = await page.goto(origin);
+  console.log(`Preview HTTP ${navigation.status()}`);
   await page.getByRole('button', { name: 'Enter Demo' }).click();
   await page.getByRole('button', { name: 'Skip intro' }).click();
   await page.getByRole('button', { name: 'Generate', exact: false }).click();
   for (const item of catalog.combos) {
-    await page.getByRole('button', { name: 'Video Library', exact: true }).click();
+    await page.getByRole('button', { name: 'Video Library' }).click();
     await page.locator('.libraryCard').nth(catalog.combos.indexOf(item)).getByRole('button', { name: 'Open analysis' }).click();
     const video = page.locator('.analysisVideo');
     assert.equal(await video.getAttribute('src'), media[item.video].url);
@@ -62,6 +63,11 @@ try {
   await page.setViewportSize({ width: 390, height: 844 });
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
   report.checks.push('mobile layout', 'no browser runtime errors');
+} catch (error) {
+  console.log('Page title:', await page.title());
+  console.log('Runtime errors:', JSON.stringify(errors));
+  await page.screenshot({ path: 'test-results/preview-failure.png' });
+  throw error;
 } finally {
   await writeFile(new URL('../preview-verification.json', import.meta.url), JSON.stringify(report, null, 2) + '\n');
   await browser.close();

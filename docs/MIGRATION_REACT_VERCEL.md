@@ -1,5 +1,47 @@
 # React + Vite migration (preview branch)
 
+## Completed hosting and Functions — 12 November 2026
+
+The migration is implemented and verified on an isolated preview.
+
+- Existing project: `proanalyst-labs-mvp`, `prj_Mlq2vXazedm3goNlECwBKJhHS9x3`.
+  GitHub remains linked, Root Directory `web`, framework Vite, Node 24.
+- Public media store: `proanalyst-demo-videos`, `store_2stKkhbsYQ1x19nV` (Frankfurt).
+- Private preview data store: `proanalyst-private-preview`, `store_FtoTtXiJtqCrjao2`.
+- Both stores use OIDC connections for preview/development only, with no static
+  Blob credentials. Hobby plan retained; no paid plan or upgrade activated.
+- `web/src/data/media.json` contains 24 actual public Blob URLs, exact filenames,
+  SHA-256 digests and byte sizes. `web/scripts/upload-videos.js` uses direct
+  multipart upload, content-addressed paths and skips existing matching objects.
+  Each upload was checked with HEAD and a 206 byte-range request containing an MP4 header.
+- `web/api/[action].js` exposes Node Functions for login, logout, session, feedback,
+  scenario-requests and insights. No Python runtime or Render request is used.
+- Staff login uses salted scrypt hashes (N=32768), random opaque session tokens,
+  private persisted sessions, 8-hour expiry and HttpOnly/Secure/SameSite=Strict
+  cookies. Logout revokes the session server-side. Passwords are never bundled.
+- Secret credentials are scoped to this migration branch's Preview environment.
+  The operator's access file is outside the repository with user-only filesystem
+  permissions; no password is printed or committed.
+- Feedback and requests use immutable private JSON records, idempotency keys,
+  validation, same-origin POST checks and durable atomic rate-limit slots.
+  Storage failure returns an error, never a success acknowledgment.
+- Insights are authorized server-side and aggregate persisted records. The preview
+  acceptance test creates two clearly labelled test records to verify persistence.
+- Original backend, video backups, CSS, introduction, logo and whitepaper remain.
+
+
+### Production readiness
+
+Do not merge automatically. Before release, connect production to the public media
+store and a separate private production store, provision server-only staff secrets
+for production, and validate a staged deployment. Preview data and credentials
+must not be reused as production state. No production environment variables,
+domain aliases, or production branch have been changed during this migration.
+
+The accidental `upload-videos` project created by a CLI argument interpretation
+was inspected by exact name and deleted with explicit user authorization. It is
+unrelated to the ProAnalyst project. No other project was deleted or changed.
+
 ## Scope and source of truth
 
 The existing React application is retained. `backend/sequences.py` remains the
@@ -22,14 +64,14 @@ timestamp, so repeated exports are identical. Do not edit the JSON by hand.
 | `POST /generate` | Exact synchronous lookup of phase + own + opp + variant |
 | `GET /status/{job_id}`, in-memory jobs and interval polling | Removed from React |
 | `GET /video/{job_id}`, short-lived JWT, byte-range streaming | Separate configurable media host; no legacy fallback |
-| `POST /login` | Explicit unavailable state; no password form or client secret |
-| `POST /feedback` | Explicit unavailable state; notes/ratings are never sent or reported saved |
-| `POST /scenario-requests` | Explicit unavailable state; requests are never reported saved |
-| `GET /insights` (staff API, no existing React screen) | Reserved server capability, unavailable |
+| `POST /login` | Same-origin Vercel Function with server-only password hash |
+| `POST /feedback` | Private persistent Blob records through Vercel Function |
+| `POST /scenario-requests` | Private persistent Blob records through Vercel Function |
+| `GET /insights` | Staff-only Function and new staff view |
 | Health and debug endpoints | No frontend dependency; retained in legacy backend |
 
-`web/src/services/server.js` defines the future same-origin endpoint contracts and
-their disabled capability status. No API calls are currently made by the app.
+`web/src/services/server.js` calls the same-origin Functions for server actions.
+Demo entry and deterministic selection require no API call.
 The demo entry state is intentionally not staff authentication. Existing history
 and favorites keep their v1.1 storage keys and scenario IDs; reloading requires
 Enter Demo but does not erase them. The intro-seen flag remains session-scoped.
@@ -37,17 +79,10 @@ Enter Demo but does not erase them. The intro-seen flag remains session-scoped.
 ## Media and interface
 
 `backend/videos/` and all legacy backend/deployment files are retained. The 24
-tactical MP4 files are not copied into `web/public` or the build. Until a media
-host is configured, tactical details, comparison, library and saved analyses work,
-with a clear **Video not connected** state. Missing catalog combinations have a
-separate **Not catalogued yet** state. A playback error retains tactical details.
-
-Set `VITE_MEDIA_BASE_URL` to a public HTTP(S) media directory only after media
-hosting has been decided. Filenames must remain exactly those in the catalog.
-The host must support MP4 playback and byte-range requests. Never put credentials
-or signed access tokens in this build-time variable. If videos need protection,
-implement a server-issued short-lived media URL flow instead of a public base.
-The old job-scoped `/video/` endpoint cannot be used as this base URL.
+tactical MP4 files are not copied into `web/public` or the build. The committed
+manifest maps each scenario to its verified public Blob URL. An optional
+`VITE_MEDIA_BASE_URL` can override the media host. Missing catalog combinations
+show **Not catalogued yet**; playback failures preserve the tactical details.
 
 Intro video, logo and whitepaper already in `web/public` remain unchanged.
 Club Methodology, layout, styles and responsive breakpoints are retained.
@@ -75,53 +110,30 @@ Python tests compare the full JSON object to the Python source, every scenario's
 metadata and video mapping, exact count, uniqueness and physical video inventory.
 Browser tests exercise demo, intro, default and A/B selections, finishing,
 unavailable scenarios, search/filter, history/favorites after reload, methodology,
-public assets, unavailable server actions and mobile overflow, with no API calls.
+public assets, honest server errors when unconfigured, and mobile overflow.
+`web/scripts/verify-preview.js` additionally tests all 24 real video playback/seek
+flows, staff authentication, durable submissions, private insights and logout.
 
-## Vercel preparation — no deployment performed
+## Deployment and verification result (12 November 2026)
 
-Use `web` as the Vercel project's Root Directory. `web/vercel.json` selects Vite,
-`npm run build`, and `dist`. Build uses the committed JSON; it does not regenerate
-it and does not require Python. Verify export parity before merging changes.
-Remove obsolete `VITE_API_URL` from the eventual preview configuration; React no
-longer reads it. Do not change production settings or disable Render during review.
+GitHub automatically builds the migration branch on the existing Vercel project.
+`web/vercel.json` uses Vite, `npm run build`, and `dist`; Python is not required.
+React no longer reads the legacy `VITE_API_URL` setting.
 
-Official references: [Vite on Vercel](https://vercel.com/docs/frameworks/frontend/vite)
-and [Vercel Functions](https://vercel.com/docs/functions/quickstart).
+- Export parity: passed; full metadata preserved, exactly 24 scenarios.
+- Python: 5 tests passed, including exact mapping and physical video inventory.
+- JavaScript: 8 tests passed, including catalog, authentication, persistence,
+  idempotency, validation, rate limits and fail-closed storage errors.
+- ESLint and Vite production build: passed.
+- Chrome end-to-end: 2 tests passed, desktop and 390px mobile flows.
+- npm audit: 0 vulnerabilities.
+- Live preview: all 24 MP4s played and seeked successfully; unauthorized insights
+  and wrong passwords rejected; feedback and scenario requests persisted and
+  appeared in staff insights; logout invalidated the session; mobile layout passed.
+- Machine-readable live evidence: `web/preview-verification.json`.
+- No production deployment or paid upgrade performed. Original backend, video
+  backups, App.css and public assets remain intact.
 
-## Subsequent server implementation
-
-Place future Functions under `web/api/`, keeping frontend assets independent:
-
-| Endpoint | Contract and requirement before activation |
-| --- | --- |
-| `POST /api/login` | Server authentication provider or verified password hashes; secure HttpOnly session cookie; no browser-stored JWT; rate limiting |
-| `POST /api/feedback` | Validate known scenario ID, boolean `useful`, note <=1200 chars; durable database write before acknowledging success |
-| `POST /api/scenario-requests` | Validate phase/shapes, note <=800 chars; durable database write before acknowledging success |
-| `GET /api/insights` | Server-enforced staff role; aggregate durable records; never rely on a client-side flag |
-
-Use server-only environment variables for credentials, session signing and database
-access (never `VITE_*`). Add origin/CSRF checks for cookie-authenticated writes,
-rate limits for public demo submissions, request validation and explicit error
-responses. Do not port the local JSONL event file to a Function filesystem.
-Wire real response validation into the client only when the respective service is
-implemented and tested. Until then the capability remains unavailable, with no
-success simulation, local submission queue or fabricated insights.
-
-Next: provision media hosting without moving files into the frontend, implement
-server capabilities separately, validate playback/seek and persistence on an
-isolated Vercel preview, then review a production cutover. Legacy rollback remains
-possible because backend and deployment configuration have not been deleted.
-
-## Verification result (12 November 2026)
-
-- Export parity check: passed; all fields preserved, exactly 24 scenarios.
-- Python: 5 tests passed, including exact mapping and video inventory.
-- JavaScript: 4 tests passed, including unavailable variants and media configuration.
-- ESLint: passed without errors or warnings.
-- Vite production build: passed (Vite 7.3.8).
-- Chrome end-to-end: 2 tests passed, covering desktop and 390px mobile flows.
-- npm audit: 0 vulnerabilities after compatible lockfile updates (no forced major upgrades).
-- Backend implementation, tactical video files, public assets, App.css and Render
-  configuration unchanged. No production deployment performed.
-- Remote tactical video playback and real server persistence are not verified or
-  operational: they require the follow-up hosting and Functions work described above.
+The remaining release step is review and a deliberate production cutover with
+separate production staff credentials and private data storage. Legacy rollback
+remains possible because backend and deployment configuration were retained.

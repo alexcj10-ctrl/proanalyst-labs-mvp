@@ -3,7 +3,9 @@
 > **React/Vite migration branch:** the frontend now runs independently of FastAPI.
 > Start with `cd web`, `npm ci`, `npm run dev`. See
 > [migration architecture, verification and Vercel setup](docs/MIGRATION_REACT_VERCEL.md).
-> Tactical video hosting and server features are pending and explicitly unavailable.
+> All 24 tactical videos are hosted on public Vercel Blob. Staff authentication,
+> feedback, scenario requests and private insights run in Vercel Functions.
+> Production cutover is pending review; the migration branch has a separate preview.
 > The original backend instructions below are retained for the legacy deployment.
 
 This repository contains the **ProAnalyst Labs v1.1** deterministic MVP.

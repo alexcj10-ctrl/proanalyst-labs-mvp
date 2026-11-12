@@ -7,7 +7,11 @@ import { put, list } from '@vercel/blob';
 const catalog = JSON.parse(await readFile(new URL('../src/data/catalog.json', import.meta.url)));
 const output = new URL('../src/data/media.json', import.meta.url);
 const storeId = process.env.MEDIA_STORE_ID;
-if (!storeId) throw new Error('MEDIA_STORE_ID is required. Use authenticated Vercel env run.');
+const project = JSON.parse(await readFile(new URL('../.vercel/project.json', import.meta.url)));
+if (project.projectId !== 'prj_Mlq2vXazedm3goNlECwBKJhHS9x3' || project.orgId !== 'team_DI9iHDsJZdoTy03PoL0mgqrX') {
+  throw new Error('Upload refused: linked project must be ProAnalyst Labs.');
+}
+if (storeId !== 'store_2stKkhbsYQ1x19nV') throw new Error('Upload refused: unexpected public media store.');
 const existing = new Map();
 let cursor;
 do {

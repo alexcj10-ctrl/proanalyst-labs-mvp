@@ -42,7 +42,7 @@ test('complete deterministic workflow without API, preserving personal data', as
   await page.locator('.selectorPanel').first().getByRole('button', { name: '5-4-1', exact: true }).click();
   await expect(page.getByText('Not catalogued yet', { exact: true })).toBeVisible();
   await expect(page.locator('.resultCard')).toHaveCount(0);
-  await page.getByRole('button', { name: 'Scenario requests · unavailable' }).click();
+  await page.locator('.requestBox button').click();
   await expect(page.getByRole('status')).toContainText('Service temporarily unavailable');
 
   await page.reload();
