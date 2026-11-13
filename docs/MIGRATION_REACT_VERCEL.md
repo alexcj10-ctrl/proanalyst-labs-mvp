@@ -50,15 +50,21 @@ Render: individuato il solo servizio `proanalyst-backend`
 (`srv-d5a7hhruibrs73bml5q0`), nel progetto `My project`
 (`prj-d5a7hhn5r7bs739lomq0`), piano Free, nessun disco persistente.
 Fatturazione osservata: 0,00 USD maturati e previsti per novembre.
-La cancellazione definitiva è in attesa della conferma richiesta dal controllo
-browser; il servizio non è stato cancellato. I backup locali restano conservati.
+Il 13 novembre 2026, dopo conferma esplicita, sono stati eliminati definitivamente
+il servizio e il progetto Render. Prima della cancellazione del progetto è stato
+verificato che contenesse zero servizi. Il dashboard e la pagina Billing mostrano
+zero servizi, piano Hobby, 0,00 USD maturati e 0,00 USD previsti per novembre.
+Il sito pubblico Vercel risponde HTTP 200 con HTML italiano; il bundle non contiene
+riferimenti a onrender.com, FastAPI o polling legacy. Backup locali, GitHub,
+Vercel e gli altri progetti non sono stati eliminati o modificati dalla dismissione.
 
 Le sezioni seguenti descrivono anche le verifiche iniziali della migrazione.
 La PR rimane aperta sulla branch originale; non è stato eseguito il merge in main.
 
 The accidental `upload-videos` project created by a CLI argument interpretation
 was inspected by exact name and deleted with explicit user authorization. It is
-unrelated to the ProAnalyst project. No other project was deleted or changed.
+unrelated to the ProAnalyst Vercel project. The separately authorized Render
+cleanup is documented above; no other Vercel project was deleted.
 
 ## Scope and source of truth
 
@@ -152,5 +158,5 @@ React no longer reads the legacy `VITE_API_URL` setting.
 - Nessun piano a pagamento attivato. Backend originale, video di backup, App.css
   e contenuti pubblici sono rimasti intatti.
 
-Restano la revisione e il merge della PR, oltre alla conferma finale per la
-dismissione Render. La versione italiana è già pubblicata e verificata.
+Restano la revisione e il merge della PR. La versione italiana è già pubblicata
+e verificata; la dismissione Render è completata.
