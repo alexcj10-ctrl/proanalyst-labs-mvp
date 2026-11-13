@@ -1,19 +1,22 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import "./App.css";
+import { t, phaseLabel, requestLabel } from "./i18n/index.js";
 
-const API_BASE = (import.meta.env.VITE_API_URL || (import.meta.env.DEV ? "http://localhost:8000" : "")).replace(/\/$/, "");
+import { catalog, findScenario, scenarioVideoUrl } from "./catalog";
+import { serverRequest, recordEvent } from "./services/server";
+const MEDIA_BASE = import.meta.env.VITE_MEDIA_BASE_URL || "";
 const WHITEPAPER_URL = "/ProAnalystLabs_Whitepaper.pdf";
 const INTRO_VIDEO_URL = "/intro.mp4";
 const STORAGE_HISTORY = "proanalyst_history_v11";
 const STORAGE_FAVORITES = "proanalyst_favorites_v11";
 
 const PHASE_DESCRIPTIONS = {
-  build_up: "Create the conditions to escape the first pressure with control.",
-  progression: "Advance through or around the opponent's intermediate block.",
-  creation: "Create advantages around the final line before the decisive action.",
-  finishing: "Coordinate arrivals and occupation of the final third.",
-  defensive_org: "Organise distances, cover and pressure when defending the block.",
-  transition: "React and reorganise immediately after possession changes.",
+  build_up: t("Create the conditions to escape the first pressure with control."),
+  progression: t("Advance through or around the opponent's intermediate block."),
+  creation: t("Create advantages around the final line before the decisive action."),
+  finishing: t("Coordinate arrivals and occupation of the final third."),
+  defensive_org: t("Organise distances, cover and pressure when defending the block."),
+  transition: t("React and reorganise immediately after possession changes."),
 };
 
 const FORMATION_LINES = {
@@ -30,22 +33,11 @@ const FORMATION_LINES = {
 function readStoredJson(key, fallback) {
   try {
     const raw = localStorage.getItem(key);
-    return raw ? JSON.parse(raw) : fallback;
+    const parsed = raw ? JSON.parse(raw) : fallback;
+    return Array.isArray(parsed) ? parsed.filter((item) => item != null) : fallback;
   } catch {
     return fallback;
   }
-}
-
-function phaseLabel(value) {
-  const labels = {
-    build_up: "Build Up",
-    progression: "Progression",
-    creation: "Creation",
-    finishing: "Finishing",
-    defensive_org: "Defensive Organisation",
-    transition: "Transition",
-  };
-  return labels[value] || value?.replaceAll("_", " ") || "";
 }
 
 function FormationPitch({ formation, compact = false }) {
@@ -96,13 +88,13 @@ function SolutionSummary({ solution, selected, onClick }) {
     >
       <div className="solutionChoiceTop">
         <span className="solutionBadge">{solution.label}</span>
-        <span className="riskBadge">Risk · {solution.profile?.risk}</span>
+        <span className="riskBadge">{t("Risk ·")} {solution.profile?.risk}</span>
       </div>
       <strong>{solution.title}</strong>
       <p>{solution.objective}</p>
       <div className="solutionMetrics">
-        <span>Verticality · {solution.profile?.verticality}</span>
-        <span>Tempo · {solution.profile?.tempo}</span>
+        <span>{t("Verticality ·")} {solution.profile?.verticality}</span>
+        <span>{t("Tempo ·")} {solution.profile?.tempo}</span>
       </div>
     </button>
   );
@@ -129,14 +121,14 @@ function TacticalDetail({ solution }) {
     <div className="tacticalDetail">
       <div className="detailHeader">
         <div>
-          <div className="sectionEyebrow">Tactical solution</div>
+          <div className="sectionEyebrow">{t("Tactical solution")}</div>
           <h2>{solution.title}</h2>
           <p>{solution.objective}</p>
         </div>
         <div className="metricStack">
-          <span><small>Risk</small>{solution.profile?.risk}</span>
-          <span><small>Verticality</small>{solution.profile?.verticality}</span>
-          <span><small>Tempo</small>{solution.profile?.tempo}</span>
+          <span><small>{t("Risk")}</small>{solution.profile?.risk}</span>
+          <span><small>{t("Verticality")}</small>{solution.profile?.verticality}</span>
+          <span><small>{t("Tempo")}</small>{solution.profile?.tempo}</span>
         </div>
       </div>
 
@@ -147,9 +139,9 @@ function TacticalDetail({ solution }) {
       </div>
 
       <div className="detailGrid">
-        <InfoList title="Key actions" items={solution.key_actions} numbered />
-        <InfoList title="Coaching points" items={solution.coaching_points} />
-        <InfoList title="Risk notes" items={solution.risk_notes} />
+        <InfoList title={t("Key actions")} items={solution.key_actions} numbered />
+        <InfoList title={t("Coaching points")} items={solution.coaching_points} />
+        <InfoList title={t("Risk notes")} items={solution.risk_notes} />
       </div>
     </div>
   );
@@ -166,24 +158,25 @@ function EmptyState({ title, children }) {
 }
 
 export default function App() {
-  const [token, setToken] = useState(localStorage.getItem("token") || "");
-  const [catalog, setCatalog] = useState(null);
-  const [loadingCatalog, setLoadingCatalog] = useState(false);
-  const [authError, setAuthError] = useState("");
+  const [isAuthed, setIsAuthed] = useState(false);
   const [staffOpen, setStaffOpen] = useState(false);
+  const [staff, setStaff] = useState(false);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [authError, setAuthError] = useState("");
+  const [authBusy, setAuthBusy] = useState(false);
+  const [insights, setInsights] = useState(null);
+  const [insightsError, setInsightsError] = useState("");
+  const [pendingEvents, setPendingEvents] = useState({});
   const [showIntro, setShowIntro] = useState(false);
 
   const [view, setView] = useState("analyze");
   const [phase, setPhase] = useState("build_up");
   const [own, setOwn] = useState("4-3-3");
   const [opp, setOpp] = useState("4-2-3-1");
-  const [variant, setVariant] = useState("");
+  const [selectedVariant, setVariant] = useState("");
   const [compareOpen, setCompareOpen] = useState(false);
 
-  const [jobId, setJobId] = useState("");
-  const [jobStatus, setJobStatus] = useState("");
   const [videoUrl, setVideoUrl] = useState("");
   const [currentAnalysis, setCurrentAnalysis] = useState(null);
   const [message, setMessage] = useState("");
@@ -198,98 +191,42 @@ export default function App() {
   const [librarySearch, setLibrarySearch] = useState("");
   const [libraryPhase, setLibraryPhase] = useState("all");
 
-  const isAuthed = Boolean(token);
-  const authHeaders = useMemo(
-    () => (token ? { Authorization: `Bearer ${token}` } : {}),
-    [token]
-  );
-
-  const logout = () => {
-    localStorage.removeItem("token");
-    setToken("");
-    setCatalog(null);
+  const resetResult = () => {
     setCurrentAnalysis(null);
     setVideoUrl("");
-    setJobId("");
-    setJobStatus("");
+    setMessage("");
+    setRequestState("");
+    setFeedbackState("");
+    setFeedbackNote("");
+  };
+
+  const changeMatchup = (setter, value) => {
+    setter(value);
+    setVariant("");
+    setCompareOpen(false);
+    resetResult();
+  };
+
+  const logout = async () => {
+    if (staff) {
+      try { await serverRequest("logout", {}); }
+      catch (error) { setMessage(error.message); return; }
+    }
+    setStaff(false);
+    setIsAuthed(false);
     setShowIntro(false);
-    setAuthError("");
+    resetResult();
   };
 
-  const loadCatalog = async (jwt) => {
-    setLoadingCatalog(true);
+  const handleDemoLogin = () => {
+    setIsAuthed(true);
     try {
-      const res = await fetch(`${API_BASE}/catalog`, {
-        headers: { Authorization: `Bearer ${jwt}` },
-      });
-      if (res.status === 401) throw new Error("auth");
-      if (!res.ok) throw new Error("catalog");
-      const data = await res.json();
-      setCatalog(data);
-
-      const defaultPhase = data.phases?.includes("build_up") ? "build_up" : data.phases?.[0];
-      if (defaultPhase) setPhase((prev) => data.phases.includes(prev) ? prev : defaultPhase);
-      if (data.formations?.length) {
-        setOwn((prev) => data.formations.includes(prev) ? prev : data.formations[0]);
-        setOpp((prev) => data.formations.includes(prev) ? prev : data.formations[0]);
-      }
-    } finally {
-      setLoadingCatalog(false);
-    }
+      if (!sessionStorage.getItem("proanalyst_intro_seen")) setShowIntro(true);
+    } catch { setShowIntro(true); }
   };
-
-  const completeAuth = async (jwt) => {
-    localStorage.setItem("token", jwt);
-    setToken(jwt);
-    await loadCatalog(jwt);
-    if (!sessionStorage.getItem("proanalyst_intro_seen")) setShowIntro(true);
-  };
-
-  const handleDemoLogin = async () => {
-    setAuthError("");
-    try {
-      const res = await fetch(`${API_BASE}/demo-login`, { method: "POST" });
-      if (!res.ok) throw new Error("demo");
-      const data = await res.json();
-      await completeAuth(data.access_token);
-    } catch {
-      setAuthError("Unable to connect to the ProAnalyst API. Check VITE_API_URL and the backend deployment.");
-    }
-  };
-
-  const handleStaffLogin = async (event) => {
-    event.preventDefault();
-    setAuthError("");
-    try {
-      const body = new URLSearchParams({ username, password });
-      const res = await fetch(`${API_BASE}/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body,
-      });
-      if (!res.ok) {
-        setAuthError("Invalid staff credentials.");
-        return;
-      }
-      const data = await res.json();
-      await completeAuth(data.access_token);
-    } catch {
-      setAuthError("Network error while signing in.");
-    }
-  };
-
-  useEffect(() => {
-    if (!token) return;
-    loadCatalog(token).catch((error) => {
-      if (error?.message === "auth") logout();
-      else setMessage("The tactical catalog could not be loaded.");
-    });
-    // Only restore the session once at mount.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   const closeIntro = () => {
-    sessionStorage.setItem("proanalyst_intro_seen", "1");
+    try { sessionStorage.setItem("proanalyst_intro_seen", "1"); } catch { /* Session storage may be disabled. */ }
     setShowIntro(false);
   };
 
@@ -298,24 +235,10 @@ export default function App() {
     return catalog.combos.filter(
       (combo) => combo.phase === phase && combo.own === own && combo.opp === opp
     );
-  }, [catalog, phase, own, opp]);
-
-  useEffect(() => {
-    const valid = availableSolutions.some((item) => item.variant === variant);
-    if (!valid) setVariant(availableSolutions[0]?.variant || "");
-  }, [availableSolutions, variant]);
-
-  useEffect(() => {
-    setCompareOpen(false);
-    setCurrentAnalysis(null);
-    setVideoUrl("");
-    setJobId("");
-    setJobStatus("");
-    setMessage("");
-    setRequestState("");
-    setFeedbackState("");
-    setFeedbackNote("");
   }, [phase, own, opp]);
+
+  const variant = availableSolutions.some((item) => item.variant === selectedVariant)
+    ? selectedVariant : availableSolutions[0]?.variant || "";
 
   const saveHistory = (solution) => {
     const entry = {
@@ -332,108 +255,53 @@ export default function App() {
     };
     setHistory((prev) => {
       const next = [entry, ...prev.filter((item) => item.scenario_id !== entry.scenario_id)].slice(0, 24);
-      localStorage.setItem(STORAGE_HISTORY, JSON.stringify(next));
+      try { localStorage.setItem(STORAGE_HISTORY, JSON.stringify(next)); } catch { /* Keep in-memory history when storage is unavailable. */ }
       return next;
     });
   };
 
-  const handleAnalyze = async (requestedVariant = variant) => {
-    if (!requestedVariant) return;
-    setMessage("");
-    setVideoUrl("");
-    setCurrentAnalysis(null);
-    setJobStatus("queued");
-    setFeedbackState("");
-    try {
-      const res = await fetch(`${API_BASE}/generate`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", ...authHeaders },
-        body: JSON.stringify({ phase, own, opp, variant: requestedVariant }),
-      });
-      if (res.status === 401) return logout();
-      if (!res.ok) throw new Error("generate");
-      const data = await res.json();
-      setVariant(requestedVariant);
-      setJobId(data.job_id);
-    } catch {
-      setJobStatus("");
-      setMessage("The analysis could not be started. Check the API connection and try again.");
+  const showScenario = (solution) => {
+    resetResult();
+    if (!solution) {
+      setMessage(t("This scenario is not available in the deterministic catalog yet."));
+      return;
     }
+    setVariant(solution.variant);
+    setCurrentAnalysis(solution);
+    setVideoUrl(scenarioVideoUrl(solution, MEDIA_BASE));
+    saveHistory(solution);
   };
 
-  useEffect(() => {
-    if (!jobId || !token) return;
-    let cancelled = false;
-    let intervalId;
-
-    const poll = async () => {
-      try {
-        const res = await fetch(`${API_BASE}/status/${jobId}`, { headers: authHeaders });
-        if (res.status === 401) return logout();
-        if (!res.ok) return;
-        const data = await res.json();
-        if (cancelled) return;
-        setJobStatus(data.status);
-
-        if (data.status === "done") {
-          const fullVideoUrl = data.video_url.startsWith("http")
-            ? data.video_url
-            : `${API_BASE}${data.video_url}`;
-          setVideoUrl(fullVideoUrl);
-          setCurrentAnalysis(data.solution);
-          saveHistory(data.solution);
-          clearInterval(intervalId);
-        } else if (data.status === "no_sequence") {
-          setMessage("This scenario is not available in the deterministic catalog yet.");
-          clearInterval(intervalId);
-        }
-      } catch {
-        // Keep polling: short transient failures should not destroy the session.
-      }
-    };
-
-    poll();
-    intervalId = window.setInterval(poll, 1000);
-    return () => {
-      cancelled = true;
-      window.clearInterval(intervalId);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [jobId, token]);
-
-  const requestScenario = async () => {
-    setRequestState("sending");
-    try {
-      const res = await fetch(`${API_BASE}/scenario-requests`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", ...authHeaders },
-        body: JSON.stringify({ phase, own, opp, note: requestNote }),
-      });
-      if (!res.ok) throw new Error("request");
-      setRequestState("sent");
-    } catch {
-      setRequestState("error");
-    }
+  const handleAnalyze = (requestedVariant = variant) => {
+    showScenario(findScenario(phase, own, opp, requestedVariant));
   };
 
-  const sendFeedback = async (useful) => {
-    if (!currentAnalysis) return;
-    setFeedbackState("sending");
+  const submitEvent = async (action, body, setter) => {
+    const fingerprint = JSON.stringify(body);
+    const key = pendingEvents[fingerprint] || crypto.randomUUID();
+    setPendingEvents((prev) => ({ ...prev, [fingerprint]: key }));
+    setter("sending");
     try {
-      const res = await fetch(`${API_BASE}/feedback`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", ...authHeaders },
-        body: JSON.stringify({
-          scenario_id: currentAnalysis.scenario_id,
-          useful,
-          note: feedbackNote,
-        }),
-      });
-      if (!res.ok) throw new Error("feedback");
-      setFeedbackState(useful ? "positive" : "negative");
-    } catch {
-      setFeedbackState("error");
-    }
+      await recordEvent(action, body, key);
+      setter("recorded");
+    } catch (error) { setter(error.message); }
+  };
+  const requestScenario = () => submitEvent("scenario-requests", { phase, own, opp, note: requestNote }, setRequestState);
+  const sendFeedback = (useful) => submitEvent("feedback", { scenario_id: currentAnalysis.scenario_id, useful, note: feedbackNote }, setFeedbackState);
+
+  const staffLogin = async (event) => {
+    event.preventDefault(); setAuthBusy(true); setAuthError("");
+    try {
+      const result = await serverRequest("login", { username, password });
+      if (result.staff !== true) throw new Error(t("Staff access was not confirmed."));
+      setPassword(""); setStaff(true); handleDemoLogin();
+    } catch (error) { setAuthError(error.message); }
+    finally { setAuthBusy(false); }
+  };
+  const openInsights = async () => {
+    setView("insights"); setInsights(null); setInsightsError("");
+    try { setInsights(await serverRequest("insights")); }
+    catch (error) { setInsightsError(error.message); }
   };
 
   const toggleFavorite = (scenarioId) => {
@@ -441,7 +309,7 @@ export default function App() {
       const next = prev.includes(scenarioId)
         ? prev.filter((id) => id !== scenarioId)
         : [...prev, scenarioId];
-      localStorage.setItem(STORAGE_FAVORITES, JSON.stringify(next));
+      try { localStorage.setItem(STORAGE_FAVORITES, JSON.stringify(next)); } catch { /* Keep in-memory favorites when storage is unavailable. */ }
       return next;
     });
   };
@@ -452,6 +320,8 @@ export default function App() {
     setOpp(item.opp);
     setVariant(item.variant);
     setView("analyze");
+    setCompareOpen(false);
+    showScenario(findScenario(item.phase, item.own, item.opp, item.variant));
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -463,7 +333,7 @@ export default function App() {
       const text = `${item.own} ${item.opp} ${item.title} ${item.objective} ${item.principles?.join(" ")}`.toLowerCase();
       return phaseMatch && (!query || text.includes(query));
     });
-  }, [catalog, libraryPhase, librarySearch]);
+  }, [libraryPhase, librarySearch]);
 
   if (!isAuthed) {
     return (
@@ -474,15 +344,15 @@ export default function App() {
             <span>PROANALYST LABS</span>
           </div>
           <div className="heroCopy">
-            <div className="heroKicker">TACTICAL INTELLIGENCE PLATFORM</div>
-            <h1>Turn a tactical problem into a clear coaching solution.</h1>
+            <div className="heroKicker">{t("TACTICAL INTELLIGENCE PLATFORM")}</div>
+            <h1>{t("Turn a tactical problem into a clear coaching solution.")}</h1>
             <p>
-              Explore deterministic 3D scenarios, tactical principles and coaching points in one professional workspace.
+              {t("Explore deterministic 3D scenarios, tactical principles and coaching points in one professional workspace.")}
             </p>
             <div className="heroStats">
-              <div><strong>24</strong><span>3D scenarios</span></div>
-              <div><strong>2</strong><span>active phases</span></div>
-              <div><strong>1</strong><span>decision workflow</span></div>
+              <div><strong>24</strong><span>{t("3D scenarios")}</span></div>
+              <div><strong>2</strong><span>{t("active phases")}</span></div>
+              <div><strong>1</strong><span>{t("decision workflow")}</span></div>
             </div>
           </div>
         </section>
@@ -490,33 +360,27 @@ export default function App() {
         <section className="loginPanel">
           <div className="loginPanelInner">
             <div className="versionPill">ProAnalyst v1.1</div>
-            <h2>Explore the platform</h2>
-            <p className="muted">No credentials required for the public demo.</p>
+            <h2>{t("Explore the platform")}</h2>
+            <p className="muted">{t("No credentials required for the public demo.")}</p>
             <button className="primaryButton large" type="button" onClick={handleDemoLogin}>
-              Enter Demo
+              {t("Enter Demo")}
               <span>→</span>
             </button>
 
             <button className="textButton" type="button" onClick={() => setStaffOpen((prev) => !prev)}>
-              {staffOpen ? "Hide staff access" : "Staff access"}
+              {staffOpen ? t("Hide staff access") : t("Staff access")}
             </button>
 
             {staffOpen && (
-              <form className="staffForm" onSubmit={handleStaffLogin}>
-                <label>
-                  <span>User</span>
-                  <input value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="username" />
-                </label>
-                <label>
-                  <span>Password</span>
-                  <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" />
-                </label>
-                <button className="secondaryButton" type="submit">Sign in</button>
+              <form className="staffForm" onSubmit={staffLogin}>
+                <label>{t("User")}<input value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="username" required /></label>
+                <label>{t("Password")}<input type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" required /></label>
+                <button className="secondaryButton" disabled={authBusy}>{authBusy ? t("Signing in…") : t("Sign in")}</button>
+                {authError && <p role="alert">{authError}</p>}
               </form>
             )}
 
-            {authError && <div className="errorNotice">{authError}</div>}
-            <div className="loginFoot">Secure API access · Protected tactical video delivery</div>
+            <div className="loginFoot">{t("Public deterministic demo · No login required")}</div>
           </div>
         </section>
       </main>
@@ -538,14 +402,14 @@ export default function App() {
           onEnded={closeIntro}
           onError={closeIntro}
         />
-        <button className="introSkip" type="button" onClick={closeIntro}>Skip intro</button>
+        <button className="introSkip" type="button" onClick={closeIntro}>{t("Skip intro")}</button>
       </main>
     );
   }
 
   const formations = catalog?.formations || Object.keys(FORMATION_LINES);
   const phaseRoadmap = catalog?.phase_roadmap || [];
-  const loading = loadingCatalog && !catalog;
+
 
   return (
     <div className="appFrame">
@@ -555,60 +419,58 @@ export default function App() {
           <div><strong>ProAnalyst</strong><span>Labs</span></div>
         </div>
 
-        <nav className="sideNav" aria-label="Main navigation">
+        <nav className="sideNav" aria-label={t("Main navigation")}>
           <button className={view === "analyze" ? "active" : ""} onClick={() => setView("analyze")}>
-            <span className="navIcon">⌁</span><span>Tactical Analysis</span>
+            <span className="navIcon">⌁</span><span>{t("Tactical Analysis")}</span>
           </button>
           <button className={view === "library" ? "active" : ""} onClick={() => setView("library")}>
-            <span className="navIcon">▦</span><span>Video Library</span>
+            <span className="navIcon">▦</span><span>{t("Video Library")}</span>
           </button>
           <button className={view === "history" ? "active" : ""} onClick={() => setView("history")}>
-            <span className="navIcon">↺</span><span>My Analyses</span>
+            <span className="navIcon">↺</span><span>{t("My Analyses")}</span>
           </button>
           <button className={view === "methodology" ? "active" : ""} onClick={() => setView("methodology")}>
-            <span className="navIcon">◇</span><span>Club Methodology</span>
+            <span className="navIcon">◇</span><span>{t("Club Methodology")}</span>
           </button>
+          {staff && <button className={view === "insights" ? "active" : ""} onClick={openInsights}>{t("Staff Insights")}</button>}
         </nav>
 
         <div className="sidebarGrow" />
         <div className="developmentCard">
           <span className="statusDot" />
-          <div><strong>Motor IA v1</strong><span>Architecture ready · next layer</span></div>
+          <div><strong>{t("Motor IA v1")}</strong><span>{t("Architecture ready · next layer")}</span></div>
         </div>
-        <a className="sidebarLink" href={WHITEPAPER_URL} target="_blank" rel="noreferrer">Whitepaper ↗</a>
-        <button className="sidebarLogout" type="button" onClick={logout}>Logout</button>
+        <a className="sidebarLink" href={WHITEPAPER_URL} target="_blank" rel="noreferrer">{t("Whitepaper ↗")}</a>
+        <button className="sidebarLogout" type="button" onClick={logout}>{t("Logout")}</button>
       </aside>
 
       <div className="mobileBar">
         <div className="sidebarBrand"><img src="/logo-proanalyst.png" alt="" /><strong>ProAnalyst Labs</strong></div>
-        <select value={view} onChange={(e) => setView(e.target.value)} aria-label="Section">
-          <option value="analyze">Tactical Analysis</option>
-          <option value="library">Video Library</option>
-          <option value="history">My Analyses</option>
-          <option value="methodology">Club Methodology</option>
+        <select value={view} onChange={(e) => e.target.value === "insights" ? openInsights() : setView(e.target.value)} aria-label={t("Section")}>
+          <option value="analyze">{t("Tactical Analysis")}</option>
+          <option value="library">{t("Video Library")}</option>
+          <option value="history">{t("My Analyses")}</option>
+          <option value="methodology">{t("Club Methodology")}</option>
+          {staff && <option value="insights">{t("Staff Insights")}</option>}
         </select>
       </div>
 
       <main className="mainWorkspace">
-        {loading ? (
-          <div className="loadingScreen"><span className="spinner" /> Loading tactical catalog…</div>
-        ) : null}
-
-        {!loading && view === "analyze" && (
+        {view === "analyze" && (
           <>
             <header className="workspaceHeader">
               <div>
-                <div className="sectionEyebrow">DECISION WORKSPACE</div>
-                <h1>Tactical Analysis</h1>
-                <p>Start from the football problem. ProAnalyst connects the scenario to the available tactical solution.</p>
+                <div className="sectionEyebrow">{t("DECISION WORKSPACE")}</div>
+                <h1>{t("Tactical Analysis")}</h1>
+                <p>{t("Start from the football problem. ProAnalyst connects the scenario to the available tactical solution.")}</p>
               </div>
-              <div className="catalogCounter"><strong>{catalog?.combos?.length || 0}</strong><span>validated video scenarios</span></div>
+              <div className="catalogCounter"><strong>{catalog?.combos?.length || 0}</strong><span>{t("validated video scenarios")}</span></div>
             </header>
 
             <section className="workspaceSection">
               <div className="sectionTitleRow">
-                <div><span>01</span><h2>Choose the game phase</h2></div>
-                <p>Only phases with validated content are active today.</p>
+                <div><span>01</span><h2>{t("Choose the game phase")}</h2></div>
+                <p>{t("Only phases with validated content are active today.")}</p>
               </div>
               <div className="phaseGrid">
                 {phaseRoadmap.map((item) => (
@@ -617,9 +479,9 @@ export default function App() {
                     type="button"
                     className={`phaseCard ${phase === item.id ? "active" : ""} ${!item.available ? "locked" : ""}`}
                     disabled={!item.available}
-                    onClick={() => setPhase(item.id)}
+                    onClick={() => changeMatchup(setPhase, item.id)}
                   >
-                    <div className="phaseTop"><span>{item.label}</span>{!item.available && <small>Coming soon</small>}</div>
+                    <div className="phaseTop"><span>{item.label}</span>{!item.available && <small>{t("Coming soon")}</small>}</div>
                     <p>{PHASE_DESCRIPTIONS[item.id]}</p>
                   </button>
                 ))}
@@ -628,20 +490,20 @@ export default function App() {
 
             <section className="workspaceSection">
               <div className="sectionTitleRow">
-                <div><span>02</span><h2>Define the matchup</h2></div>
-                <p>Choose the structures exactly as the staff sees them on the pitch.</p>
+                <div><span>02</span><h2>{t("Define the matchup")}</h2></div>
+                <p>{t("Choose the structures exactly as the staff sees them on the pitch.")}</p>
               </div>
               <div className="matchupGrid">
-                <FormationPicker label="Our shape" value={own} formations={formations} onChange={setOwn} accent="ownAccent" />
-                <div className="versusMark"><span>VS</span></div>
-                <FormationPicker label="Opponent shape" value={opp} formations={formations} onChange={setOpp} accent="oppAccent" />
+                <FormationPicker label={t("Our shape")} value={own} formations={formations} onChange={(value) => changeMatchup(setOwn, value)} accent="ownAccent" />
+                <div className="versusMark"><span>{t("VS")}</span></div>
+                <FormationPicker label={t("Opponent shape")} value={opp} formations={formations} onChange={(value) => changeMatchup(setOpp, value)} accent="oppAccent" />
               </div>
             </section>
 
             <section className="workspaceSection">
               <div className="sectionTitleRow">
-                <div><span>03</span><h2>Choose the tactical solution</h2></div>
-                <p>{phaseLabel(phase)} · {own} vs {opp}</p>
+                <div><span>03</span><h2>{t("Choose the tactical solution")}</h2></div>
+                <p>{phaseLabel(phase)} · {own} {t("vs")} {opp}</p>
               </div>
 
               {availableSolutions.length ? (
@@ -656,8 +518,6 @@ export default function App() {
                           setVariant(solution.variant);
                           setCurrentAnalysis(null);
                           setVideoUrl("");
-                          setJobId("");
-                          setJobStatus("");
                           setMessage("");
                         }}
                       />
@@ -668,28 +528,28 @@ export default function App() {
                       className="primaryButton"
                       type="button"
                       onClick={() => handleAnalyze(variant)}
-                      disabled={!variant || jobStatus === "queued" || jobStatus === "processing"}
+                      disabled={!variant}
                     >
-                      {jobStatus === "queued" || jobStatus === "processing" ? <><span className="spinner" /> Analysing…</> : <>Analyse Scenario <span>→</span></>}
+                      {t("Generate")} <span>→</span>
                     </button>
                     {availableSolutions.length > 1 && (
                       <button className="secondaryButton" type="button" onClick={() => setCompareOpen((prev) => !prev)}>
-                        {compareOpen ? "Close comparison" : "Compare solutions"}
+                        {compareOpen ? t("Close comparison") : t("Compare solutions")}
                       </button>
                     )}
                   </div>
 
                   {compareOpen && (
                     <div className="comparisonPanel">
-                      <div className="comparisonHeader"><span>Solution comparison</span><small>Use this before choosing what to show the staff.</small></div>
+                      <div className="comparisonHeader"><span>{t("Solution comparison")}</span><small>{t("Use this before choosing what to show the staff.")}</small></div>
                       <div className="comparisonGrid">
                         {availableSolutions.map((solution) => (
                           <div className="comparisonCard" key={solution.scenario_id}>
-                            <div className="solutionChoiceTop"><span className="solutionBadge">{solution.label}</span><span>{solution.profile?.risk} risk</span></div>
+                            <div className="solutionChoiceTop"><span className="solutionBadge">{solution.label}</span><span>{solution.profile?.risk} {t("risk")}</span></div>
                             <h3>{solution.title}</h3>
                             <p>{solution.objective}</p>
-                            <InfoList title="Core principles" items={solution.principles?.slice(0, 4)} />
-                            <button className="textButton" type="button" onClick={() => handleAnalyze(solution.variant)}>Open {solution.label}</button>
+                            <InfoList title={t("Core principles")} items={solution.principles?.slice(0, 4)} />
+                            <button className="textButton" type="button" onClick={() => handleAnalyze(solution.variant)}>{t("Open")} {solution.label}</button>
                           </div>
                         ))}
                       </div>
@@ -699,20 +559,20 @@ export default function App() {
               ) : (
                 <div className="unavailablePanel">
                   <div>
-                    <span className="availabilityPill">Not catalogued yet</span>
-                    <h3>{phaseLabel(phase)} · {own} vs {opp}</h3>
-                    <p>This combination is not a dead end anymore. Request it and use demand to prioritise the next ProAnalyst scenario.</p>
+                    <span className="availabilityPill">{t("Not catalogued yet")}</span>
+                    <h3>{phaseLabel(phase)} · {own} {t("vs")} {opp}</h3>
+                    <p>{t("This combination is not in the deterministic catalog. Request it to help prioritise the next scenario.")}</p>
                   </div>
                   <div className="requestBox">
                     <textarea
                       value={requestNote}
                       onChange={(e) => setRequestNote(e.target.value)}
-                      placeholder="Optional: add the specific tactical problem (e.g. high press, goalkeeper involved, no long ball)."
+                      placeholder={t("Optional: add the specific tactical problem (e.g. high press, goalkeeper involved, no long ball).")}
                     />
-                    <button className="primaryButton" type="button" onClick={requestScenario} disabled={requestState === "sending" || requestState === "sent"}>
-                      {requestState === "sent" ? "Request recorded ✓" : requestState === "sending" ? "Recording…" : "Request this analysis"}
+                    <button className="primaryButton" type="button" onClick={requestScenario} disabled={requestState === "sending" || requestState === "recorded"}>
+                      {requestState === "sending" ? t("Saving…") : t("Request this analysis")}
                     </button>
-                    {requestState === "error" && <small className="errorText">The request could not be recorded.</small>}
+                    {requestState && <small role="status">{requestState === "recorded" ? t("Request recorded.") : requestState === "sending" ? t("Saving…") : requestState}</small>}
                   </div>
                 </div>
               )}
@@ -720,63 +580,69 @@ export default function App() {
 
             <section className="workspaceSection resultSection">
               <div className="sectionTitleRow">
-                <div><span>04</span><h2>Tactical result</h2></div>
+                <div><span>04</span><h2>{t("Tactical result")}</h2></div>
                 {currentAnalysis && (
                   <button
                     className={`favoriteButton ${favorites.includes(currentAnalysis.scenario_id) ? "active" : ""}`}
                     type="button"
                     onClick={() => toggleFavorite(currentAnalysis.scenario_id)}
                   >
-                    {favorites.includes(currentAnalysis.scenario_id) ? "★ Saved" : "☆ Save analysis"}
+                    {favorites.includes(currentAnalysis.scenario_id) ? t("★ Saved") : t("☆ Save analysis")}
                   </button>
                 )}
               </div>
 
               {message && <div className="errorNotice">{message}</div>}
 
-              {currentAnalysis && videoUrl ? (
+              {currentAnalysis ? (
                 <div className="resultCard">
                   <div className="videoPanel">
                     <div className="videoHeader">
-                      <div><span>{currentAnalysis.phase_label}</span><strong>{currentAnalysis.own} <em>vs</em> {currentAnalysis.opp}</strong></div>
+                      <div><span>{currentAnalysis.phase_label}</span><strong>{currentAnalysis.own} <em>{t("vs")}</em> {currentAnalysis.opp}</strong></div>
                       <span className="solutionBadge">{currentAnalysis.label}</span>
                     </div>
-                    <video key={videoUrl} src={videoUrl} controls playsInline className="analysisVideo" />
+                    {videoUrl ? (
+                      <video key={videoUrl} src={videoUrl} controls playsInline className="analysisVideo"
+                        onError={() => { setVideoUrl(""); setMessage(t("The scenario video could not be loaded. Tactical information remains available.")); }} />
+                    ) : (
+                      <EmptyState title={t("Video not connected")}>
+                        {t("This scenario is available. Its video will be playable once media hosting is connected.")}
+                      </EmptyState>
+                    )}
                   </div>
                   <TacticalDetail solution={currentAnalysis} />
                 </div>
               ) : (
-                <EmptyState title="Your analysis will appear here">
-                  Select a validated solution and click Analyse Scenario. The video will be paired with objective, principles, key actions, risks and coaching points.
+                <EmptyState title={t("Your analysis will appear here")}>
+                  {t("Select a validated solution and click Generate. The video will be paired with objective, principles, key actions, risks and coaching points.")}
                 </EmptyState>
               )}
 
               {currentAnalysis && (
                 <div className="feedbackPanel">
-                  <div><strong>Was this solution useful?</strong><span>Your feedback guides which tactical problems ProAnalyst develops next.</span></div>
-                  <input value={feedbackNote} onChange={(e) => setFeedbackNote(e.target.value)} placeholder="Optional coaching note" />
+                  <div><strong>{t("Was this solution useful?")}</strong><span>{t("Your feedback helps prioritise future tactical scenarios.")}</span></div>
+                  <input value={feedbackNote} onChange={(e) => setFeedbackNote(e.target.value)} placeholder={t("Optional coaching note")} />
                   <div className="feedbackActions">
-                    <button type="button" onClick={() => sendFeedback(true)} disabled={feedbackState === "sending"}>Useful ↑</button>
-                    <button type="button" onClick={() => sendFeedback(false)} disabled={feedbackState === "sending"}>Not useful ↓</button>
+                    <button type="button" onClick={() => sendFeedback(true)} disabled={feedbackState === "sending" || feedbackState === "recorded"}>{t("Useful ↑")}</button>
+                    <button type="button" onClick={() => sendFeedback(false)} disabled={feedbackState === "sending" || feedbackState === "recorded"}>{t("Not useful ↓")}</button>
                   </div>
-                  {(feedbackState === "positive" || feedbackState === "negative") && <small>Feedback recorded. Thank you.</small>}
-                  {feedbackState === "error" && <small className="errorText">Feedback could not be recorded.</small>}
+                  {feedbackState && <small role="status">{feedbackState === "recorded" ? t("Feedback recorded. Thank you.") : feedbackState === "sending" ? t("Saving…") : feedbackState}</small>}
                 </div>
               )}
             </section>
           </>
         )}
 
-        {!loading && view === "library" && (
+        {view === "library" && (
           <>
             <header className="workspaceHeader">
-              <div><div className="sectionEyebrow">TACTICAL KNOWLEDGE BASE</div><h1>Video Library</h1><p>Browse validated scenarios by phase, structure or tactical principle.</p></div>
-              <div className="catalogCounter"><strong>{libraryItems.length}</strong><span>matching solutions</span></div>
+              <div><div className="sectionEyebrow">{t("TACTICAL KNOWLEDGE BASE")}</div><h1>{t("Video Library")}</h1><p>{t("Browse validated scenarios by phase, structure or tactical principle.")}</p></div>
+              <div className="catalogCounter"><strong>{libraryItems.length}</strong><span>{t("matching solutions")}</span></div>
             </header>
             <div className="libraryToolbar">
-              <input value={librarySearch} onChange={(e) => setLibrarySearch(e.target.value)} placeholder="Search formation, principle, objective…" />
+              <input value={librarySearch} onChange={(e) => setLibrarySearch(e.target.value)} placeholder={t("Search formation, principle, objective…")} />
               <select value={libraryPhase} onChange={(e) => setLibraryPhase(e.target.value)}>
-                <option value="all">All phases</option>
+                <option value="all">{t("All phases")}</option>
                 {catalog?.phases?.map((item) => <option key={item} value={item}>{phaseLabel(item)}</option>)}
               </select>
             </div>
@@ -785,7 +651,7 @@ export default function App() {
                 <article className="libraryCard" key={item.scenario_id}>
                   <div className="libraryVisual">
                     <FormationPitch formation={item.own} />
-                    <div className="libraryVs"><span>{item.own}</span><em>vs</em><span>{item.opp}</span></div>
+                    <div className="libraryVs"><span>{item.own}</span><em>{t("vs")}</em><span>{item.opp}</span></div>
                   </div>
                   <div className="libraryBody">
                     <div className="libraryMeta"><span>{item.phase_label}</span><span>{item.label}</span></div>
@@ -793,8 +659,8 @@ export default function App() {
                     <p>{item.objective}</p>
                     <div className="principleChips smallChips">{item.principles?.slice(0, 3).map((p) => <span key={p}>{p}</span>)}</div>
                     <div className="libraryActions">
-                      <button className="secondaryButton" type="button" onClick={() => openScenario(item)}>Open analysis</button>
-                      <button className={`iconButton ${favorites.includes(item.scenario_id) ? "active" : ""}`} type="button" onClick={() => toggleFavorite(item.scenario_id)} aria-label="Toggle favorite">
+                      <button className="secondaryButton" type="button" onClick={() => openScenario(item)}>{t("Open analysis")}</button>
+                      <button className={`iconButton ${favorites.includes(item.scenario_id) ? "active" : ""}`} type="button" onClick={() => toggleFavorite(item.scenario_id)} aria-label={t("Toggle favorite")}>
                         {favorites.includes(item.scenario_id) ? "★" : "☆"}
                       </button>
                     </div>
@@ -802,79 +668,89 @@ export default function App() {
                 </article>
               ))}
             </div>
-            {!libraryItems.length && <EmptyState title="No matching scenarios">Try another phase, formation or tactical keyword.</EmptyState>}
+            {!libraryItems.length && <EmptyState title={t("No matching scenarios")}>{t("Try another phase, formation or tactical keyword.")}</EmptyState>}
           </>
         )}
 
-        {!loading && view === "history" && (
+        {view === "history" && (
           <>
             <header className="workspaceHeader">
-              <div><div className="sectionEyebrow">PERSONAL WORKSPACE</div><h1>My Analyses</h1><p>Return to recent scenarios and keep the most useful solutions close.</p></div>
-              <div className="catalogCounter"><strong>{favorites.length}</strong><span>saved favorites</span></div>
+              <div><div className="sectionEyebrow">{t("PERSONAL WORKSPACE")}</div><h1>{t("My Analyses")}</h1><p>{t("Return to recent scenarios and keep the most useful solutions close.")}</p></div>
+              <div className="catalogCounter"><strong>{favorites.length}</strong><span>{t("saved favorites")}</span></div>
             </header>
 
             <section className="historySection">
-              <div className="sectionTitleRow"><div><span>★</span><h2>Saved</h2></div></div>
+              <div className="sectionTitleRow"><div><span>★</span><h2>{t("Saved")}</h2></div></div>
               <div className="historyGrid">
                 {catalog?.combos?.filter((item) => favorites.includes(item.scenario_id)).map((item) => (
                   <button className="historyCard" type="button" key={item.scenario_id} onClick={() => openScenario(item)}>
-                    <div><span>{item.phase_label} · {item.label}</span><strong>{item.own} vs {item.opp}</strong></div><p>{item.title}</p><em>Open →</em>
+                    <div><span>{item.phase_label} · {item.label}</span><strong>{item.own} {t("vs")} {item.opp}</strong></div><p>{item.title}</p><em>{t("Open →")}</em>
                   </button>
                 ))}
               </div>
-              {!favorites.length && <p className="muted">Save a tactical result or library item and it will appear here.</p>}
+              {!favorites.length && <p className="muted">{t("Save a tactical result or library item and it will appear here.")}</p>}
             </section>
 
             <section className="historySection">
-              <div className="sectionTitleRow"><div><span>↺</span><h2>Recent analyses</h2></div><p>Stored locally on this device.</p></div>
+              <div className="sectionTitleRow"><div><span>↺</span><h2>{t("Recent analyses")}</h2></div><p>{t("Stored locally on this device.")}</p></div>
               <div className="historyList">
-                {history.map((item) => (
+                {history.map((stored) => ({ ...stored, ...catalog.combos.find((scenario) => scenario.scenario_id === stored.scenario_id) })).map((item) => (
                   <button className="historyRow" type="button" key={`${item.scenario_id}-${item.created_at}`} onClick={() => openScenario(item)}>
-                    <span className="historyDate">{new Date(item.created_at).toLocaleDateString()}</span>
+                    <span className="historyDate">{new Date(item.created_at).toLocaleDateString("it-IT")}</span>
                     <span className="historyPhase">{item.phase_label}</span>
-                    <strong>{item.own} vs {item.opp}</strong>
+                    <strong>{item.own} {t("vs")} {item.opp}</strong>
                     <span>{item.label}</span>
                     <em>{item.title}</em>
                     <b>→</b>
                   </button>
                 ))}
               </div>
-              {!history.length && <EmptyState title="No analyses yet">Run your first tactical scenario and it will be remembered here.</EmptyState>}
+              {!history.length && <EmptyState title={t("No analyses yet")}>{t("Run your first tactical scenario and it will be remembered here.")}</EmptyState>}
             </section>
           </>
         )}
 
-        {!loading && view === "methodology" && (
+        {view === "methodology" && (
           <>
             <header className="workspaceHeader">
-              <div><div className="sectionEyebrow">LINE B · CLUB ENVIRONMENT</div><h1>Club Methodology</h1><p>A separate workspace for each club's own game model, principles and development pathway.</p></div>
-              <div className="roadmapBadge">Product roadmap</div>
+              <div><div className="sectionEyebrow">{t("LINE B · CLUB ENVIRONMENT")}</div><h1>{t("Club Methodology")}</h1><p>{t("A separate workspace for each club's own game model, principles and development pathway.")}</p></div>
+              <div className="roadmapBadge">{t("Product roadmap")}</div>
             </header>
 
             <div className="methodologyHero">
               <div>
-                <span className="availabilityPill">Architecture direction</span>
-                <h2>ProAnalyst is the platform. The club owns the methodology.</h2>
-                <p>This area is intentionally separate from Tactical Analysis. It will organise a club's principles, age-group progression, training content and video references without imposing a universal ProAnalyst methodology.</p>
+                <span className="availabilityPill">{t("Architecture direction")}</span>
+                <h2>{t("ProAnalyst is the platform. The club owns the methodology.")}</h2>
+                <p>{t("This area is intentionally separate from Tactical Analysis. It will organise a club's principles, age-group progression, training content and video references without imposing a universal ProAnalyst methodology.")}</p>
               </div>
               <div className="methodologyMap">
-                {["Game Model", "Principles", "Age Groups", "Training Sessions", "Video Examples", "Player Development"].map((item, index) => (
+                {[t("Game Model"), t("Principles"), t("Age Groups"), t("Training Sessions"), t("Video Examples"), t("Player Development")].map((item, index) => (
                   <div key={item}><span>0{index + 1}</span><strong>{item}</strong></div>
                 ))}
               </div>
             </div>
 
             <div className="futureGrid">
-              <article><span>01</span><h3>Human methodology first</h3><p>Staff define the content and structure before generative AI is allowed to extend it.</p></article>
-              <article><span>02</span><h3>Club-specific knowledge</h3><p>Every organisation keeps its own vocabulary, priorities, progressions and references.</p></article>
-              <article><span>03</span><h3>AI on the same structure</h3><p>The future engine can retrieve and generate sessions or explanations without losing the club's identity.</p></article>
+              <article><span>01</span><h3>{t("Human methodology first")}</h3><p>{t("Staff define the content and structure before generative AI is allowed to extend it.")}</p></article>
+              <article><span>02</span><h3>{t("Club-specific knowledge")}</h3><p>{t("Every organisation keeps its own vocabulary, priorities, progressions and references.")}</p></article>
+              <article><span>03</span><h3>{t("AI on the same structure")}</h3><p>{t("The future engine can retrieve and generate sessions or explanations without losing the club's identity.")}</p></article>
             </div>
           </>
         )}
 
+        {view === "insights" && staff && <section>
+          <header className="workspaceHeader"><div><div className="sectionEyebrow">{t("STAFF ONLY")}</div><h1>{t("Staff Insights")}</h1><p>{t("Feedback and requests stored privately.")}</p></div></header>
+          {insightsError && <p role="alert">{insightsError}</p>}
+          {!insights && !insightsError && <p role="status">{t("Loading insights…")}</p>}
+          {insights && <><div className="historyGrid">
+            <div className="historyCard"><strong>{insights.feedback_count}</strong><p>{t("Feedback submissions")}</p></div>
+            <div className="historyCard"><strong>{insights.positive_feedback}</strong><p>{t("Positive feedback")}</p></div>
+            <div className="historyCard"><strong>{insights.scenario_requests}</strong><p>{t("Scenario requests")}</p></div>
+          </div><h2>{t("Most requested scenarios")}</h2><ul>{insights.top_requested_scenarios.map(([key, count]) => <li key={key}>{requestLabel(key)} — {count}</li>)}</ul></>}
+        </section>}
         <footer className="appFooter">
-          <span>ProAnalyst Labs v1.1 · Tactical Intelligence Platform</span>
-          <span>Deterministic video layer today · Motor IA architecture next</span>
+          <span>{t("ProAnalyst Labs v1.1 · Tactical Intelligence Platform")}</span>
+          <span>{t("Deterministic video layer today · Motor IA architecture next")}</span>
         </footer>
       </main>
     </div>

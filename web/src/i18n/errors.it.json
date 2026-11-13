@@ -1,0 +1,23 @@
+{
+  "Service unavailable": "Servizio non disponibile. Riprova più tardi.",
+  "Network error": "Connessione non riuscita. Controlla la rete e riprova.",
+  "The server did not confirm saving.": "Il server non ha confermato il salvataggio.",
+  "Too many requests. Please try again later.": "Troppe richieste. Riprova più tardi.",
+  "Not found": "Risorsa non trovata.",
+  "Method not allowed": "Operazione non consentita.",
+  "Invalid request origin": "Origine della richiesta non valida.",
+  "JSON required": "Formato della richiesta non valido.",
+  "Request too large": "La richiesta supera la dimensione consentita.",
+  "Invalid JSON": "Formato della richiesta non valido.",
+  "Invalid request": "Richiesta non valida.",
+  "Staff login is not configured": "L’accesso staff non è ancora configurato.",
+  "Invalid credentials format": "Formato delle credenziali non valido.",
+  "Invalid credentials": "Nome utente o password non corretti.",
+  "Staff access required": "È necessario accedere come membro dello staff.",
+  "A valid idempotency key is required": "Identificativo della richiesta non valido. Riprova.",
+  "Invalid note": "La nota non è valida o supera la lunghezza consentita.",
+  "Invalid scenario or rating": "Scenario o valutazione non validi.",
+  "Invalid phase or formation": "Fase o sistema di gioco non validi.",
+  "Idempotency key already used": "Questa richiesta è già stata utilizzata con dati diversi.",
+  "Service temporarily unavailable. No success has been confirmed.": "Servizio temporaneamente non disponibile. Il salvataggio non è stato confermato."
+}
