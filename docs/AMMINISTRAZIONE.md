@@ -76,3 +76,19 @@ Le namespace video preview/production impediscono cancellazioni incrociate nello
 - `scripts/verify-preview.js --read-only`: riproduzione e ricerca temporale dei 24 MP4; accesso amministratore e statistiche senza inviare feedback di prova in produzione.
 
 Lo stato effettivo dei deploy e delle verifiche live è registrato nei report JSON della cartella `web`.
+
+## Rilascio verificato del 16 novembre 2026
+
+- Codice applicativo: commit `7c86592` sulla branch `migration/react-vite-vercel`, PR #1.
+- Preview verificata: https://proanalyst-labs-n648c7cs5-alejandros-projects-a7058275.vercel.app
+- Produzione: https://proanalyst-labs-mvp.vercel.app
+- Deployment di produzione: `dpl_DZEdQh2qGpWfDcBpGX4hFidwqwM8`, progetto `prj_Mlq2vXazedm3goNlECwBKJhHS9x3`.
+- Build, lint, 34 test Node, 7 test browser e 5 test Python superati; audit produzione senza vulnerabilità rilevate.
+- Upload multipart reale dalla preview, verifica MP4, riproduzione/seek, pubblicazione senza deploy, visibilità da un browser utente, disattivazione e rimozione dei soli dati di prova: superati.
+- Tutte le 10 API amministrative rispondono HTTP 403 agli utenti ordinari, verificato anche sul deployment con configurazione di produzione prima della promozione.
+- Riproduzione e seek dei 24 video originali, login, statistiche riservate, logout e layout mobile verificati sia sulla preview sia sul dominio pubblico dopo la promozione.
+- Nessuno scenario, video o feedback di prova inserito in produzione. Lo store pubblico è tornato ai 24 video originali dopo le verifiche.
+
+Il problema rilevato nella prima preview (ETag debole di una risposta compressa, incompatibile con `ifMatch`) è stato corretto richiedendo `Accept-Encoding: identity` nella lettura del documento versionato. Il test di regressione controlla sia la scrittura valida sia il rifiuto delle revisioni obsolete.
+
+Evidenze: `web/admin-preview-verification.json`, `web/admin-catalog-verification.json`, `web/admin-production-verification.json`.

@@ -29,14 +29,24 @@ async function request(path, body) {
 try {
   const home = await request('/');
   assert.equal(home.status, 200); assert.match(home.text, /lang="it"/);
-  assert.equal((await request('/api/insights')).status, 403);
+  const catalog = await request('/api/catalog');
+  assert.equal(catalog.status, 200); assert.equal(JSON.parse(catalog.text).combos.length, 24);
+  for (const [action, body] of [['insights'], ['admin-content'], ['admin-events'], ['admin-scenarios', {}],
+    ['admin-scenario-status', {}], ['admin-scenario-delete', {}], ['admin-video-delete', {}],
+    ['admin-upload-intent', {}], ['admin-upload-token', {}], ['admin-upload-complete', {}]]) {
+    assert.equal((await request(`/api/${action}`, body)).status, 403, action);
+  }
   const login = await request('/api/login', credentials);
   assert.equal(login.status, 200); csrfToken = JSON.parse(login.text).csrfToken;
   assert.match(csrfToken, /^[a-f0-9]{64}$/);
   const insights = await request('/api/insights'); assert.equal(insights.status, 200);
   const stats = JSON.parse(insights.text);
   assert.equal(typeof stats.feedback_count, 'number');
+  const content = await request('/api/admin-content');
+  assert.equal(content.status, 200);
+  const state = JSON.parse(content.text);
+  assert.equal(state.scenarios.length, 24); assert.equal(state.videos.length, 24);
   assert.equal((await request('/api/logout', {})).status, 200);
   assert.equal((await request('/api/insights')).status, 403);
-  console.log('Production checks passed: Italian HTML, staff login, private insights and logout. No submissions created.');
+  console.log('Production checks passed: Italian HTML, 24 scenarios/videos, all 10 administrative APIs reject public users, owner login, private insights/content and logout. No submissions created.');
 } finally { await rm(cookies, { force: true }); }
