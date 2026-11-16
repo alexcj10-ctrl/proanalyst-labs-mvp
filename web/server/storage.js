@@ -1,20 +1,22 @@
 import { put, get, list, del, BlobPreconditionFailedError } from '@vercel/blob';
 
-export function privateStore() {
-  const storeId = process.env.PRIVATE_STORE_ID;
+export function privateStore({ env = process.env, io = { put, get, list, del } } = {}) {
+  const storeId = env.PRIVATE_STORE_ID;
   if (!storeId) throw new Error('Private storage is not configured');
   return {
     // Content edits use the ETag from the same uncached read as the value. A
     // stale editor can never silently overwrite a newer publish or upload.
     async readVersion(path) {
-      const result = await get(path, { storeId, access: 'private', useCache: false });
+      // Compressed CDN responses have weak ETags, which cannot be used by If-Match.
+      // Identity encoding keeps the strong ETag and document from the same read.
+      const result = await io.get(path, { storeId, access: 'private', useCache: false, headers: { 'Accept-Encoding': 'identity' } });
       if (!result) return null;
       if (result.statusCode !== 200 || !result.blob.etag) throw new Error('Private read failed');
       return { value: JSON.parse(await new Response(result.stream).text()), etag: result.blob.etag };
     },
     async writeVersion(path, value, etag = null) {
       try {
-        const result = await put(path, JSON.stringify(value), {
+        const result = await io.put(path, JSON.stringify(value), {
           storeId, access: 'private', addRandomSuffix: false,
           allowOverwrite: Boolean(etag), ...(etag ? { ifMatch: etag } : {}),
           contentType: 'application/json', cacheControlMaxAge: 60,
@@ -28,23 +30,23 @@ export function privateStore() {
       }
     },
     async read(path) {
-      const result = await get(path, { storeId, access: 'private', useCache: false });
+      const result = await io.get(path, { storeId, access: 'private', useCache: false });
       if (!result) return null;
       if (result.statusCode !== 200) throw new Error('Private read failed');
       return JSON.parse(await new Response(result.stream).text());
     },
     async create(path, value, ttlDays) {
-      await put(path, JSON.stringify(value), {
+      await io.put(path, JSON.stringify(value), {
         storeId, access: 'private', addRandomSuffix: false, allowOverwrite: false,
         contentType: 'application/json', ...(ttlDays ? { ttlDays } : {}),
       });
     },
-    async remove(path) { await del(path, { storeId }); },
+    async remove(path) { await io.del(path, { storeId }); },
     async scan(prefix) {
       const paths = [];
       let cursor;
       do {
-        const page = await list({ storeId, prefix, cursor, limit: 1000 });
+        const page = await io.list({ storeId, prefix, cursor, limit: 1000 });
         paths.push(...page.blobs.map((blob) => blob.pathname));
         cursor = page.hasMore ? page.cursor : undefined;
       } while (cursor);

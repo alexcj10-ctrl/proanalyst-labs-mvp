@@ -114,7 +114,12 @@ try {
   assert.equal((await api('catalog', undefined, { publicUser: true })).data.combos.length, 24);
   report.checks.push('deactivated scenario immediately removed from public catalog');
   assert.deepEqual(errors, []);
+} catch (error) {
+  report.failure = error.message;
+  console.error('Preview check failed:', error.message);
+  throw error;
 } finally {
+  try {
   // Cleanup targets only the UUIDs returned during this test, never original content.
   if (csrfToken && (testScenarioId || testVideoId)) {
     let state = (await api('admin-content')).data;
@@ -133,7 +138,9 @@ try {
     assert.equal((await api('logout', {})).status, 200);
     assert.equal((await api('admin-content')).status, 403);
   }
-  await writeFile('admin-preview-verification.json', JSON.stringify(report, null, 2) + '\n');
-  await browser.close();
+  } finally {
+    await writeFile('admin-preview-verification.json', JSON.stringify(report, null, 2) + '\n');
+    await browser.close();
+  }
 }
 console.log(JSON.stringify(report, null, 2));
