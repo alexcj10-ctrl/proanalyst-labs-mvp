@@ -41,12 +41,15 @@ try {
     report.videos.push({ filename: item.video, playback: true, seek: true });
     console.log(`Playback + seek ${report.videos.length}/24: ${item.video}`);
   }
+  let csrfToken = '';
   const request = async (action, body) => {
     const response = await context.request.fetch(`${origin}/api/${action}`, { method: body === undefined ? 'GET' : 'POST',
-      headers: { ...headers, Origin: origin, 'Idempotency-Key': randomUUID() }, ...(body ? { data: body } : {}) });
-    return { status: response.status(), body: await response.json() };
+      headers: { ...headers, Origin: origin, 'Idempotency-Key': randomUUID(), ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}) }, ...(body ? { data: body } : {}) });
+    const result = { status: response.status(), body: await response.json() };
+    if (action === 'login' && result.status === 200) csrfToken = result.body.csrfToken;
+    return result;
   };
-  assert.equal((await request('insights')).status, 401);
+  assert.equal((await request('insights')).status, 403);
   if (!readOnly) assert.equal((await request('login', { username: credentials.username, password: 'incorrect-test-password' })).status, 401);
   assert.equal((await request('login', credentials)).status, 200);
   const before = await request('insights');
@@ -63,7 +66,7 @@ try {
   report.checks.push('wrong password rejected', 'persistent feedback', 'persistent scenario request');
   }
   assert.equal((await request('logout', {})).status, 200);
-  assert.equal((await request('insights')).status, 401);
+  assert.equal((await request('insights')).status, 403);
   report.checks.push('staff authorization', 'private insights', 'logout revocation');
   assert.deepEqual(errors, []);
   await page.setViewportSize({ width: 390, height: 844 });

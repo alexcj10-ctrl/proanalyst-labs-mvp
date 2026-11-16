@@ -1,0 +1,98 @@
+import { test, expect } from '@playwright/test';
+import { createHandler, passwordHash } from '../../server/app.js';
+import { memoryStore } from '../helpers/memory-store.js';
+import { getPublishedCatalog } from '../../server/content.js';
+
+const password = 'browser-test-only-password';
+const hash = await passwordHash(password);
+
+// Browser UI calls the real handler and validators against an isolated test store.
+async function backend(page) {
+  const { store } = memoryStore();
+  const handler = createHandler({ getStore: () => store, env: { STAFF_USER: 'owner', STAFF_PASSWORD_HASH: hash } });
+  await page.route('**/api/**', async (route) => {
+    const request = route.request();
+    const headers = { ...request.headers(), host: new URL(request.url()).host };
+    const res = { headers: {}, setHeader(k, v) { this.headers[k] = v; }, status(s) { this.code = s; return this; }, json(v) { this.body = v; } };
+    await handler({ url: request.url(), method: request.method(), headers, body: request.postData() || '{}', socket: { remoteAddress: '127.0.0.1' } }, res);
+    await route.fulfill({ status: res.code, headers: res.headers, json: res.body });
+  });
+  return store;
+}
+
+async function login(page) {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Accesso amministratore', exact: true }).click();
+  await page.getByLabel('Nome utente').fill('owner');
+  await page.getByLabel('Password').fill(password);
+  await page.getByRole('button', { name: 'Accedi', exact: true }).click();
+  await page.getByRole('button', { name: 'Salta introduzione' }).click();
+  await page.getByRole('button', { name: 'Pannello amministratore' }).click();
+}
+
+test('real owner session, editor persistence, publication, user visibility and logout', async ({ page }) => {
+  const store = await backend(page);
+  await login(page);
+  await expect(page.locator('.adminVideoCard')).toHaveCount(24);
+  await page.getByRole('button', { name: 'Gestione scenari', exact: true }).click();
+  await page.getByRole('button', { name: 'Nuovo scenario', exact: true }).click();
+  await page.getByLabel('Fase di gioco', { exact: true }).selectOption('progression');
+  await page.getByLabel('Titolo dello scenario').fill('Prova di progressione attraverso il terzo uomo');
+  await page.getByLabel('Obiettivo tattico').fill('Superare la linea intermedia con il terzo uomo.');
+  for (const label of ['Principi di gioco', 'Azioni chiave', 'Indicazioni per l’allenatore', 'Rischi tattici']) {
+    await page.getByLabel(label, { exact: true }).fill('Controllare le distanze tra i reparti.');
+  }
+  await page.getByLabel('Video dello scenario').selectOption({ index: 1 });
+  await page.getByRole('button', { name: 'Salva bozza', exact: true }).click();
+  await expect(page.getByRole('status')).toContainText('Bozza salvata');
+  expect((await getPublishedCatalog(store)).combos).toHaveLength(24);
+  const created = page.locator('.adminScenarioCard').filter({ hasText: 'Prova di progressione attraverso il terzo uomo' });
+  await created.getByRole('button', { name: 'Pubblica', exact: true }).click();
+  await expect(page.getByRole('status')).toContainText('Scenario pubblicato');
+  expect((await getPublishedCatalog(store)).combos).toHaveLength(25);
+  await page.reload();
+  await page.getByRole('button', { name: 'Pannello amministratore' }).click();
+  await page.getByRole('button', { name: 'Gestione scenari', exact: true }).click();
+  await created.getByRole('button', { name: 'Disattiva', exact: true }).click();
+  await expect(page.getByRole('status')).toContainText('Scenario disattivato');
+  expect((await getPublishedCatalog(store)).combos).toHaveLength(24);
+  await page.getByRole('button', { name: 'Statistiche', exact: true }).click();
+  await expect(page.locator('.adminStats')).toContainText('Video disponibili');
+  await page.getByRole('button', { name: 'Feedback e richieste', exact: true }).click();
+  await expect(page.locator('.adminPanel')).toContainText('Non sono ancora presenti riscontri');
+  await page.getByRole('button', { name: 'Esci', exact: true }).filter({ visible: true }).click();
+  await page.getByRole('button', { name: 'Entra nella demo' }).click();
+  await expect(page.getByRole('button', { name: 'Pannello amministratore' })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Libreria video' }).click();
+  await expect(page.locator('.libraryCard')).toHaveCount(24);
+});
+
+test('public browser flags never expose the admin panel; catalog failures hide stale content', async ({ page }) => {
+  await backend(page);
+  await page.addInitScript(() => {
+    localStorage.setItem('role', 'admin'); localStorage.setItem('staff', 'true'); localStorage.setItem('admin', 'true');
+  });
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Entra nella demo' }).click();
+  await page.getByRole('button', { name: 'Salta introduzione' }).click();
+  await expect(page.getByRole('button', { name: 'Pannello amministratore' })).toHaveCount(0);
+  await page.route('**/api/catalog', (route) => route.fulfill({ status: 503, json: { error: 'Service unavailable' } }));
+  await page.reload();
+  await page.getByRole('button', { name: 'Entra nella demo' }).click();
+  await expect(page.getByRole('button', { name: 'Riprova', exact: false })).toBeVisible();
+  await expect(page.locator('.analysisVideo')).toHaveCount(0);
+  await expect(page.locator('.libraryCard')).toHaveCount(0);
+});
+
+test('administrator panel and editor fit mobile screens', async ({ page }) => {
+  await backend(page);
+  await login(page);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.locator('.adminUploadCard')).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
+  await page.getByRole('button', { name: 'Gestione scenari', exact: true }).click();
+  await page.getByRole('button', { name: 'Nuovo scenario', exact: true }).click();
+  await expect(page.getByLabel('Titolo dello scenario')).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
+  await page.screenshot({ path: 'test-results/admin-mobile.png', fullPage: true });
+});

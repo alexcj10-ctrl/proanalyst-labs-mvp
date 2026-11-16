@@ -12,7 +12,7 @@ export default defineConfig({
         let body = '';
         for await (const chunk of req) {
           body += chunk;
-          if (body.length > 8192) { res.statusCode = 413; res.end(); return; }
+          if (Buffer.byteLength(body, 'utf8') > 32768) { res.statusCode = 413; res.end(); return; }
         }
         req.body = body || '{}';
         res.status = (status) => { res.statusCode = status; return res; };

@@ -1,9 +1,32 @@
-import { put, get, list, del } from '@vercel/blob';
+import { put, get, list, del, BlobPreconditionFailedError } from '@vercel/blob';
 
 export function privateStore() {
   const storeId = process.env.PRIVATE_STORE_ID;
   if (!storeId) throw new Error('Private storage is not configured');
   return {
+    // Content edits use the ETag from the same uncached read as the value. A
+    // stale editor can never silently overwrite a newer publish or upload.
+    async readVersion(path) {
+      const result = await get(path, { storeId, access: 'private', useCache: false });
+      if (!result) return null;
+      if (result.statusCode !== 200 || !result.blob.etag) throw new Error('Private read failed');
+      return { value: JSON.parse(await new Response(result.stream).text()), etag: result.blob.etag };
+    },
+    async writeVersion(path, value, etag = null) {
+      try {
+        const result = await put(path, JSON.stringify(value), {
+          storeId, access: 'private', addRandomSuffix: false,
+          allowOverwrite: Boolean(etag), ...(etag ? { ifMatch: etag } : {}),
+          contentType: 'application/json', cacheControlMaxAge: 60,
+        });
+        return { etag: result.etag };
+      } catch (error) {
+        if (error instanceof BlobPreconditionFailedError || (!etag && /already exists/i.test(error.message))) {
+          throw Object.assign(new Error('Il catalogo è stato aggiornato. Ricarica i contenuti prima di salvare.'), { status: 409 });
+        }
+        throw error;
+      }
+    },
     async read(path) {
       const result = await get(path, { storeId, access: 'private', useCache: false });
       if (!result) return null;

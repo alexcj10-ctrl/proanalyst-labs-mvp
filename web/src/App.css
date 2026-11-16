@@ -108,6 +108,13 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .sidebarLink, .sidebarLogout { color: var(--muted); font-size: 12px; padding: 9px 7px; background: none; border: 0; text-align: left; cursor: pointer; text-decoration: none; }
 .sidebarLink:hover, .sidebarLogout:hover { color: #fff; }
 .mobileBar { display: none; }
+.roleBadge { border: 1px solid var(--border); border-radius: 999px; padding: 7px 12px; color: var(--muted); align-self: flex-start; margin: 16px 0 12px; font-size: 11px; font-weight: 700; }
+.roleAdmin { color: #c9baff; border-color: rgba(139,92,246,.35); background: var(--purple-soft); }
+.catalogNotice { border: 1px solid var(--border); background: var(--panel); border-radius: 18px; padding: 28px; margin-bottom: 24px; }
+.catalogNotice p { color: var(--muted); }
+.historyRow:disabled { cursor: default; opacity: .55; }
+.unavailableSaved { color: var(--muted); cursor: default; }
+.unavailableSaved .textButton { font-size: 11px; }
 .mainWorkspace { min-width: 0; padding: 44px clamp(24px, 4vw, 64px) 26px; max-width: 1550px; width: 100%; margin: 0 auto; }
 .loadingScreen { min-height: 70vh; display: flex; align-items: center; justify-content: center; gap: 10px; color: var(--muted); }
 .spinner { display: inline-block; width: 15px; height: 15px; border: 2px solid rgba(255,255,255,.23); border-top-color: #fff; border-radius: 50%; animation: spin .7s linear infinite; }
@@ -308,6 +315,10 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 }
 
 @media (max-width: 680px) {
+  .mobileBar { flex-wrap: wrap; gap: 9px; }
+  .mobileBar .sidebarBrand { flex: 1; }
+  .mobileBar select { order: 3; width: 100%; min-width: 0; }
+  .mobileBar .mobileLogout { padding: 8px; font-size: 12px; }
   .heroCopy h1 { font-size: 44px; }
   .heroStats { gap: 22px; }
   .workspaceHeader { align-items: flex-start; flex-direction: column; margin-bottom: 32px; }

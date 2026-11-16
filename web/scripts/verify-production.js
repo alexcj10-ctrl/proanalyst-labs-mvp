@@ -9,8 +9,10 @@ assert.equal(project.projectId, 'prj_Mlq2vXazedm3goNlECwBKJhHS9x3');
 const credentials = JSON.parse(await readFile(process.env.STAFF_ACCESS_FILE));
 assert.equal(credentials.project, project.projectId);
 const cookies = 'test-results/staff-production-cookie.local';
+let csrfToken = '';
 async function request(path, body) {
   const args = ['--yes', 'vercel@65.15.0', 'curl', `${origin}${path}`, '--scope', 'alejandros-projects-a7058275', '--', '-sS', '-w', '"\\n%{http_code}"', '-b', cookies, '-c', cookies];
+  if (csrfToken) args.push('-H', `"X-CSRF-Token: ${csrfToken}"`);
   if (body !== undefined) args.push('-X', 'POST', '-H', '"Content-Type: application/json"', '-H', `"Origin: ${origin}"`, '--data-binary', '@-');
   const output = await new Promise((resolve, reject) => {
     const child = spawn('npx.cmd', args, { shell: true, windowsHide: true, stdio: ['pipe', 'pipe', 'pipe'] });
@@ -27,12 +29,14 @@ async function request(path, body) {
 try {
   const home = await request('/');
   assert.equal(home.status, 200); assert.match(home.text, /lang="it"/);
-  assert.equal((await request('/api/insights')).status, 401);
-  assert.equal((await request('/api/login', credentials)).status, 200);
+  assert.equal((await request('/api/insights')).status, 403);
+  const login = await request('/api/login', credentials);
+  assert.equal(login.status, 200); csrfToken = JSON.parse(login.text).csrfToken;
+  assert.match(csrfToken, /^[a-f0-9]{64}$/);
   const insights = await request('/api/insights'); assert.equal(insights.status, 200);
   const stats = JSON.parse(insights.text);
   assert.equal(typeof stats.feedback_count, 'number');
   assert.equal((await request('/api/logout', {})).status, 200);
-  assert.equal((await request('/api/insights')).status, 401);
+  assert.equal((await request('/api/insights')).status, 403);
   console.log('Production checks passed: Italian HTML, staff login, private insights and logout. No submissions created.');
 } finally { await rm(cookies, { force: true }); }

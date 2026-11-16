@@ -1,0 +1,73 @@
+.adminPanel { min-width: 0; }
+.adminNavigation, .adminActions, .adminTabs, .adminToolbar, .adminScenarioMeta, .adminEventTop { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.adminNavigation { justify-content: space-between; margin-bottom: 24px; }
+.adminTabs { padding: 5px; border: 1px solid var(--border); background: var(--panel); border-radius: 14px; }
+.adminTabs button { background: transparent; border: 0; color: var(--muted); padding: 12px 14px; border-radius: 10px; cursor: pointer; font-weight: 700; }
+.adminTabs button.active { background: var(--purple-soft); color: #d6c8ff; }
+.adminPanel button:disabled { opacity: .5; cursor: not-allowed; }
+.adminUploadCard, .adminEditor, .adminEvent, .adminScenarioCard, .adminVideoCard { padding: 24px; background: linear-gradient(145deg,var(--panel-2),var(--panel)); border: 1px solid var(--border); border-radius: 20px; min-width: 0; }
+.adminUploadCard { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
+.adminUploadCard h2 { letter-spacing: -.035em; font-size: 26px; }
+.adminUploadCard p, .adminScenarioCard p, .adminEvent p { line-height: 1.65; color: var(--muted); overflow-wrap: anywhere; }
+.adminUploadCard small, .adminFieldHint { color: var(--muted); font-size: 12px; }
+.adminUploadForm, .adminForm, .adminForm label { display: flex; flex-direction: column; gap: 10px; }
+.adminPanel input, .adminPanel select, .adminPanel textarea { min-width: 0; width: 100%; border: 1px solid var(--border-strong); border-radius: 10px; padding: 12px; background: var(--bg); color: var(--text); }
+.adminPanel input[type=file] { padding: 10px; font-size: 12px; }
+.adminPanel input::file-selector-button { border: 0; background: var(--purple-soft); color: #c9baff; border-radius: 6px; padding: 8px; margin-right: 8px; }
+.adminHint, .adminSuccess, .errorNotice { padding: 14px 18px; border-radius: 12px; font-size: 13px; line-height: 1.65; }
+.adminHint { background: var(--purple-soft); color: #c9baff; }
+.adminSuccess { background: rgba(69,215,162,.1); color: var(--green); margin-bottom: 20px; border: 1px solid rgba(69,215,162,.2); }
+.errorNotice { background: rgba(255,100,124,.1); color: #ffb2bf; margin-bottom: 20px; border: 1px solid rgba(255,100,124,.25); }
+.adminToolbar { margin: 24px 0; }
+.adminToolbar input { flex: 1 1 260px; }
+.adminToolbar select { flex: 0 1 180px; }
+.adminVideoGrid { display: grid; grid-template-columns: repeat(auto-fill,minmax(280px,1fr)); gap: 16px; }
+.adminVideoIcon { color: #b9a6ff; font-size: 28px; padding-bottom: 14px; }
+.adminVideoInfo h3 { font-size: 13px; overflow-wrap: anywhere; line-height: 1.6; margin: 0; }
+.adminVideoInfo p { color: var(--muted); font-size: 12px; margin-bottom: 20px; }
+.adminVideoPreview { width: 100%; border-radius: 12px; margin-top: 20px; background: #000; }
+.adminActions { margin-top: 16px; }
+.adminProgress { display: flex; align-items: center; gap: 12px; font-size: 12px; }
+.adminProgress progress { width: 100%; accent-color: var(--purple); }
+.adminEditorAnchor { scroll-margin-top: 28px; }
+.adminEditor { margin-bottom: 24px; }
+.adminForm fieldset { margin: 0; padding: 0; border: 0; min-width: 0; }
+.adminForm label { margin-bottom: 18px; font-size: 13px; font-weight: 600; }
+.adminForm textarea { resize: vertical; line-height: 1.6; }
+.adminFormGrid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 0 20px; }
+.adminProfileGrid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 20px; }
+.adminScenarioList, .adminEventList { display: grid; gap: 16px; }
+.adminScenarioMeta { font-size: 11px; color: var(--muted); }
+.adminScenarioCard h3 { letter-spacing: -.02em; margin: 16px 0 8px; }
+.adminStatus { padding: 6px 10px; border-radius: 999px; font-weight: 700; background: var(--panel-3); }
+.adminStatus.published { color: var(--green); background: rgba(69,215,162,.1); }
+.adminStatus.draft { color: #dac28a; background: rgba(218,194,138,.1); }
+.adminStatus.inactive { color: var(--muted); }
+.dangerButton { color: #ff9aaa; }
+.dangerAction { background: #a92345; }
+.adminStats { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 16px; margin: 24px 0 36px; }
+.adminStats div { display: flex; flex-direction: column; gap: 8px; border: 1px solid var(--border); border-radius: 16px; background: var(--panel); padding: 24px; }
+.adminStats strong { font-size: 32px; font-weight: 700; letter-spacing: -.04em; }
+.adminStats span { font-size: 12px; color: var(--muted); }
+.adminRanking { list-style: none; padding: 0; }
+.adminRanking li { display: flex; justify-content: space-between; gap: 12px; border-bottom: 1px solid var(--border); padding: 16px 0; }
+.adminEventTop { justify-content: space-between; }
+.adminEvent time { font-size: 11px; color: var(--muted); }
+.adminRating { color: #ffb2bf; font-size: 12px; }
+.adminRating.positive { color: var(--green); }
+.adminDialogBackdrop { position: fixed; inset: 0; z-index: 100; padding: 24px; background: rgba(0,0,0,.8); display: grid; place-items: center; }
+.adminConfirm { max-width: 520px; width: 100%; border: 1px solid var(--border-strong); border-radius: 20px; background: var(--panel-2); padding: 28px; box-shadow: var(--shadow); }
+.adminConfirm strong { display: block; overflow-wrap: anywhere; }
+.adminConfirm p { color: var(--muted); line-height: 1.65; }
+@media (max-width: 700px) {
+  .adminTabs { width: 100%; display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 4px; }
+  .adminTabs button { font-size: 12px; padding: 12px 8px; }
+  .adminUploadCard, .adminFormGrid, .adminProfileGrid { grid-template-columns: minmax(0,1fr); gap: 12px; }
+  .adminUploadCard, .adminEditor, .adminEvent, .adminScenarioCard, .adminVideoCard { padding: 18px; }
+  .adminVideoGrid { grid-template-columns: minmax(0,1fr); }
+  .adminStats { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; }
+  .adminStats div { padding: 18px; }
+  .adminActions { align-items: stretch; }
+  .adminActions button { flex: 1 1 auto; }
+  .adminToolbar select { flex: 1 1 150px; }
+}

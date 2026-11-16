@@ -1,6 +1,15 @@
 import { test, expect } from '@playwright/test';
 import sourceCatalog from '../../src/data/catalog.json' with { type: 'json' };
 import { catalog } from '../../src/catalog.js';
+import { getPublishedCatalog, getAdminContent } from '../../server/content.js';
+import { memoryStore } from '../helpers/memory-store.js';
+
+test.beforeEach(async ({ page }) => {
+  const { store } = memoryStore();
+  await page.route('**/api/catalog', (route) => getPublishedCatalog(store).then((json) => route.fulfill({ json })));
+  await page.route('**/api/session', (route) => route.fulfill({ json: { role: 'user', admin: false } }));
+  await page.route('**/api/admin-content', (route) => getAdminContent(store).then((json) => route.fulfill({ json })));
+});
 
 async function enterDemo(page) {
   await page.goto('/');
@@ -9,12 +18,12 @@ async function enterDemo(page) {
   await page.getByRole('button', { name: "Salta introduzione" }).click();
 }
 
-test('complete deterministic workflow without API, preserving personal data', async ({ page }) => {
+test('deterministic workflow without generation API or polling, preserving personal data', async ({ page }) => {
   const apiRequests = [];
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
   page.on('request', (request) => {
-    if (/\/(demo-login|catalog|generate|status)(\/|\?|$)/.test(new URL(request.url()).pathname)) apiRequests.push(request.url());
+    if (/\/(demo-login|generate|status)(\/|\?|$)/.test(new URL(request.url()).pathname)) apiRequests.push(request.url());
   });
   await enterDemo(page);
   await page.getByRole('button', { name: "Genera", exact: false }).click();
@@ -67,7 +76,7 @@ test('complete deterministic workflow without API, preserving personal data', as
 test('mobile navigation, finishing pattern and staff form', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
-  await page.getByRole('button', { name: "Accesso staff", exact: true }).click();
+  await page.getByRole('button', { name: "Accesso amministratore", exact: true }).click();
   await expect(page.getByRole('button', { name: "Accedi", exact: true })).toBeVisible();
   await expect(page.locator('input[type=password]')).toHaveCount(1);
   await enterDemo(page);
@@ -106,16 +115,17 @@ test('staff interface and dynamic errors stay Italian', async ({ page }) => {
   // Browser fixture only; production keeps real authentication and persistence.
   await page.route('**/api/login', (route) => route.fulfill({ status: 401, json: { error: 'Invalid credentials' } }));
   await page.goto('/');
-  await page.getByRole('button', { name: 'Accesso staff', exact: true }).click();
+  await page.getByRole('button', { name: 'Accesso amministratore', exact: true }).click();
   await page.getByLabel('Nome utente').fill('test');
   await page.getByLabel('Password').fill('wrong-test-only');
   await page.getByRole('button', { name: 'Accedi', exact: true }).click();
   await expect(page.getByRole('alert')).toHaveText('Nome utente o password non corretti.');
-  await page.route('**/api/login', (route) => route.fulfill({ json: { staff: true } }));
+  await page.route('**/api/login', (route) => route.fulfill({ json: { role: 'admin', admin: true, csrfToken: 'a'.repeat(64) } }));
   await page.route('**/api/insights', (route) => route.fulfill({ json: { feedback_count: 1, positive_feedback: 1, scenario_requests: 2, top_requested_scenarios: [['build_up|4-3-3|4-4-2', 2]] } }));
   await page.getByRole('button', { name: 'Accedi', exact: true }).click();
   await page.getByRole('button', { name: 'Salta introduzione' }).click();
-  await page.getByRole('button', { name: 'Statistiche staff' }).click();
+  await page.getByRole('button', { name: 'Pannello amministratore' }).click();
+  await page.getByRole('button', { name: 'Statistiche', exact: true }).click();
   await expect(page.locator('.mainWorkspace')).toContainText('Costruzione dal basso · 4-3-3 · 4-4-2');
   await expect(page.locator('.mainWorkspace')).not.toContainText('build_up');
 });

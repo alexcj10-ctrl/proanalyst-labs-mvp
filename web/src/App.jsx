@@ -1,9 +1,10 @@
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "./App.css";
-import { t, phaseLabel, requestLabel } from "./i18n/index.js";
+import { t, phaseLabel } from "./i18n/index.js";
 
-import { catalog, findScenario, scenarioVideoUrl } from "./catalog";
+import { findScenario, scenarioVideoUrl } from "./catalog";
 import { serverRequest, recordEvent } from "./services/server";
+import AdminPanel from "./components/AdminPanel.jsx";
 const MEDIA_BASE = import.meta.env.VITE_MEDIA_BASE_URL || "";
 const WHITEPAPER_URL = "/ProAnalystLabs_Whitepaper.pdf";
 const INTRO_VIDEO_URL = "/intro.mp4";
@@ -41,7 +42,7 @@ function readStoredJson(key, fallback) {
 }
 
 function FormationPitch({ formation, compact = false }) {
-  const lines = FORMATION_LINES[formation] || [1, 4, 3, 3];
+  const lines = FORMATION_LINES[formation] || [1, ...formation.split("-").map(Number)];
   return (
     <div className={`miniPitch ${compact ? "miniPitchCompact" : ""}`} aria-hidden="true">
       <div className="pitchHalfLine" />
@@ -165,8 +166,11 @@ export default function App() {
   const [password, setPassword] = useState("");
   const [authError, setAuthError] = useState("");
   const [authBusy, setAuthBusy] = useState(false);
-  const [insights, setInsights] = useState(null);
-  const [insightsError, setInsightsError] = useState("");
+  const [catalog, setCatalog] = useState(null);
+  const [catalogError, setCatalogError] = useState("");
+  const [catalogLoading, setCatalogLoading] = useState(true);
+  const catalogRequest = useRef(0);
+  const authRequest = useRef(0);
   const [pendingEvents, setPendingEvents] = useState({});
   const [showIntro, setShowIntro] = useState(false);
 
@@ -177,8 +181,12 @@ export default function App() {
   const [selectedVariant, setVariant] = useState("");
   const [compareOpen, setCompareOpen] = useState(false);
 
-  const [videoUrl, setVideoUrl] = useState("");
-  const [currentAnalysis, setCurrentAnalysis] = useState(null);
+  const [failedVideoUrl, setFailedVideoUrl] = useState("");
+  const [analysisId, setAnalysisId] = useState(null);
+  const currentAnalysis = catalog?.combos.find((item) => item.scenario_id === analysisId) || null;
+  const currentVideoUrl = scenarioVideoUrl(currentAnalysis, MEDIA_BASE);
+  const videoUrl = failedVideoUrl === currentVideoUrl ? "" : currentVideoUrl;
+  const setCurrentAnalysis = (solution) => setAnalysisId(solution?.scenario_id || null);
   const [message, setMessage] = useState("");
 
   const [requestNote, setRequestNote] = useState("");
@@ -191,9 +199,65 @@ export default function App() {
   const [librarySearch, setLibrarySearch] = useState("");
   const [libraryPhase, setLibraryPhase] = useState("all");
 
+  const refreshCatalog = useCallback(async () => {
+    const request = ++catalogRequest.current;
+    setCatalogLoading(true);
+    setCatalogError("");
+    try {
+      const next = await serverRequest("catalog");
+      if (!Array.isArray(next.combos) || !Array.isArray(next.formations) || !Array.isArray(next.phase_roadmap)) throw new Error(t("Catalog unavailable"));
+      if (request === catalogRequest.current) setCatalog(next);
+    } catch (error) {
+      if (request === catalogRequest.current) {
+        // Do not fall back to bundled or cached scenarios: they may have been unpublished.
+        setCatalog(null);
+        setCatalogError(error.message);
+      }
+    } finally {
+      if (request === catalogRequest.current) setCatalogLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    const restoreSession = async () => {
+      const request = authRequest.current;
+      try {
+        const session = await serverRequest("session");
+        if (!active || request !== authRequest.current) return;
+        if (session.role === "admin" && session.admin === true) {
+          setStaff(true);
+          setIsAuthed(true);
+        } else {
+          setStaff(false);
+          setView((previous) => previous === "admin" ? "analyze" : previous);
+        }
+      } catch {
+        if (active && request === authRequest.current) {
+          setStaff(false);
+          setView((previous) => previous === "admin" ? "analyze" : previous);
+        }
+      }
+    };
+    const refresh = () => { void refreshCatalog(); void restoreSession(); };
+    const expire = () => {
+      setStaff(false);
+      setView("analyze");
+      setMessage(t("Administrator session expired"));
+    };
+    refresh();
+    window.addEventListener("focus", refresh);
+    window.addEventListener("proanalyst-session-expired", expire);
+    return () => {
+      active = false;
+      window.removeEventListener("focus", refresh);
+      window.removeEventListener("proanalyst-session-expired", expire);
+    };
+  }, [refreshCatalog]);
+
   const resetResult = () => {
     setCurrentAnalysis(null);
-    setVideoUrl("");
+    setFailedVideoUrl("");
     setMessage("");
     setRequestState("");
     setFeedbackState("");
@@ -208,6 +272,7 @@ export default function App() {
   };
 
   const logout = async () => {
+    authRequest.current++;
     if (staff) {
       try { await serverRequest("logout", {}); }
       catch (error) { setMessage(error.message); return; }
@@ -215,6 +280,7 @@ export default function App() {
     setStaff(false);
     setIsAuthed(false);
     setShowIntro(false);
+    setView("analyze");
     resetResult();
   };
 
@@ -235,7 +301,7 @@ export default function App() {
     return catalog.combos.filter(
       (combo) => combo.phase === phase && combo.own === own && combo.opp === opp
     );
-  }, [phase, own, opp]);
+  }, [catalog, phase, own, opp]);
 
   const variant = availableSolutions.some((item) => item.variant === selectedVariant)
     ? selectedVariant : availableSolutions[0]?.variant || "";
@@ -268,12 +334,11 @@ export default function App() {
     }
     setVariant(solution.variant);
     setCurrentAnalysis(solution);
-    setVideoUrl(scenarioVideoUrl(solution, MEDIA_BASE));
     saveHistory(solution);
   };
 
   const handleAnalyze = (requestedVariant = variant) => {
-    showScenario(findScenario(phase, own, opp, requestedVariant));
+    showScenario(findScenario(phase, own, opp, requestedVariant, catalog));
   };
 
   const submitEvent = async (action, body, setter) => {
@@ -291,17 +356,13 @@ export default function App() {
 
   const staffLogin = async (event) => {
     event.preventDefault(); setAuthBusy(true); setAuthError("");
+    authRequest.current++;
     try {
       const result = await serverRequest("login", { username, password });
-      if (result.staff !== true) throw new Error(t("Staff access was not confirmed."));
+      if (result.role !== "admin" || result.admin !== true) throw new Error(t("Staff access was not confirmed."));
       setPassword(""); setStaff(true); handleDemoLogin();
     } catch (error) { setAuthError(error.message); }
     finally { setAuthBusy(false); }
-  };
-  const openInsights = async () => {
-    setView("insights"); setInsights(null); setInsightsError("");
-    try { setInsights(await serverRequest("insights")); }
-    catch (error) { setInsightsError(error.message); }
   };
 
   const toggleFavorite = (scenarioId) => {
@@ -321,7 +382,7 @@ export default function App() {
     setVariant(item.variant);
     setView("analyze");
     setCompareOpen(false);
-    showScenario(findScenario(item.phase, item.own, item.opp, item.variant));
+    showScenario(catalog?.combos.find((scenario) => scenario.scenario_id === item.scenario_id));
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -333,7 +394,7 @@ export default function App() {
       const text = `${item.own} ${item.opp} ${item.title} ${item.objective} ${item.principles?.join(" ")}`.toLowerCase();
       return phaseMatch && (!query || text.includes(query));
     });
-  }, [libraryPhase, librarySearch]);
+  }, [catalog, libraryPhase, librarySearch]);
 
   if (!isAuthed) {
     return (
@@ -350,8 +411,8 @@ export default function App() {
               {t("Explore deterministic 3D scenarios, tactical principles and coaching points in one professional workspace.")}
             </p>
             <div className="heroStats">
-              <div><strong>24</strong><span>{t("3D scenarios")}</span></div>
-              <div><strong>2</strong><span>{t("active phases")}</span></div>
+              <div><strong>{catalog ? catalog.combos.length : "—"}</strong><span>{t("3D scenarios")}</span></div>
+              <div><strong>{catalog ? catalog.phase_roadmap.filter((item) => item.available).length : "—"}</strong><span>{t("active phases")}</span></div>
               <div><strong>1</strong><span>{t("decision workflow")}</span></div>
             </div>
           </div>
@@ -432,10 +493,11 @@ export default function App() {
           <button className={view === "methodology" ? "active" : ""} onClick={() => setView("methodology")}>
             <span className="navIcon">◇</span><span>{t("Club Methodology")}</span>
           </button>
-          {staff && <button className={view === "insights" ? "active" : ""} onClick={openInsights}>{t("Staff Insights")}</button>}
+          {staff && <button className={view === "admin" ? "active" : ""} onClick={() => setView("admin")}><span className="navIcon">⚙</span><span>{t("Administrator panel")}</span></button>}
         </nav>
 
         <div className="sidebarGrow" />
+        <div className={`roleBadge ${staff ? "roleAdmin" : ""}`}>{staff ? t("Administrator") : t("Public user")}</div>
         <div className="developmentCard">
           <span className="statusDot" />
           <div><strong>{t("Motor IA v1")}</strong><span>{t("Architecture ready · next layer")}</span></div>
@@ -446,17 +508,23 @@ export default function App() {
 
       <div className="mobileBar">
         <div className="sidebarBrand"><img src="/logo-proanalyst.png" alt="" /><strong>ProAnalyst Labs</strong></div>
-        <select value={view} onChange={(e) => e.target.value === "insights" ? openInsights() : setView(e.target.value)} aria-label={t("Section")}>
+        <select value={view} onChange={(e) => setView(e.target.value)} aria-label={t("Section")}>
           <option value="analyze">{t("Tactical Analysis")}</option>
           <option value="library">{t("Video Library")}</option>
           <option value="history">{t("My Analyses")}</option>
           <option value="methodology">{t("Club Methodology")}</option>
-          {staff && <option value="insights">{t("Staff Insights")}</option>}
+          {staff && <option value="admin">{t("Administrator panel")}</option>}
         </select>
+        <button className="textButton mobileLogout" type="button" onClick={logout}>{t("Logout")}</button>
       </div>
 
       <main className="mainWorkspace">
-        {view === "analyze" && (
+        {!catalog && view !== "admin" && view !== "methodology" && <section className="catalogNotice" aria-live="polite">
+          <h2>{catalogLoading ? t("Loading catalog") : t("Catalog unavailable")}</h2>
+          {catalogError && <p role="alert">{catalogError}</p>}
+          {!catalogLoading && <button type="button" className="secondaryButton" onClick={refreshCatalog}>{t("Retry catalog")}</button>}
+        </section>}
+        {view === "analyze" && catalog && (
           <>
             <header className="workspaceHeader">
               <div>
@@ -517,7 +585,7 @@ export default function App() {
                         onClick={() => {
                           setVariant(solution.variant);
                           setCurrentAnalysis(null);
-                          setVideoUrl("");
+                          setFailedVideoUrl("");
                           setMessage("");
                         }}
                       />
@@ -603,7 +671,7 @@ export default function App() {
                     </div>
                     {videoUrl ? (
                       <video key={videoUrl} src={videoUrl} controls playsInline className="analysisVideo"
-                        onError={() => { setVideoUrl(""); setMessage(t("The scenario video could not be loaded. Tactical information remains available.")); }} />
+                        onError={() => { setFailedVideoUrl(videoUrl); setMessage(t("The scenario video could not be loaded. Tactical information remains available.")); }} />
                     ) : (
                       <EmptyState title={t("Video not connected")}>
                         {t("This scenario is available. Its video will be playable once media hosting is connected.")}
@@ -633,7 +701,7 @@ export default function App() {
           </>
         )}
 
-        {view === "library" && (
+        {view === "library" && catalog && (
           <>
             <header className="workspaceHeader">
               <div><div className="sectionEyebrow">{t("TACTICAL KNOWLEDGE BASE")}</div><h1>{t("Video Library")}</h1><p>{t("Browse validated scenarios by phase, structure or tactical principle.")}</p></div>
@@ -672,7 +740,7 @@ export default function App() {
           </>
         )}
 
-        {view === "history" && (
+        {view === "history" && catalog && (
           <>
             <header className="workspaceHeader">
               <div><div className="sectionEyebrow">{t("PERSONAL WORKSPACE")}</div><h1>{t("My Analyses")}</h1><p>{t("Return to recent scenarios and keep the most useful solutions close.")}</p></div>
@@ -687,6 +755,13 @@ export default function App() {
                     <div><span>{item.phase_label} · {item.label}</span><strong>{item.own} {t("vs")} {item.opp}</strong></div><p>{item.title}</p><em>{t("Open →")}</em>
                   </button>
                 ))}
+                {favorites.filter((id) => !catalog.combos.some((item) => item.scenario_id === id)).map((id) => (
+                  <div className="historyCard unavailableSaved" key={id}>
+                    <strong>{t("Saved scenario unavailable")}</strong>
+                    <p>{t("Saved scenario preserved")}</p>
+                    <button className="textButton" type="button" onClick={() => toggleFavorite(id)}>{t("Remove favorite")}</button>
+                  </div>
+                ))}
               </div>
               {!favorites.length && <p className="muted">{t("Save a tactical result or library item and it will appear here.")}</p>}
             </section>
@@ -694,16 +769,19 @@ export default function App() {
             <section className="historySection">
               <div className="sectionTitleRow"><div><span>↺</span><h2>{t("Recent analyses")}</h2></div><p>{t("Stored locally on this device.")}</p></div>
               <div className="historyList">
-                {history.map((stored) => ({ ...stored, ...catalog.combos.find((scenario) => scenario.scenario_id === stored.scenario_id) })).map((item) => (
-                  <button className="historyRow" type="button" key={`${item.scenario_id}-${item.created_at}`} onClick={() => openScenario(item)}>
+                {history.map((stored) => {
+                  const current = catalog.combos.find((scenario) => scenario.scenario_id === stored.scenario_id);
+                  const item = current ? { ...stored, ...current } : { ...stored,
+                    phase_label: phaseLabel(stored.phase), label: t("Saved scenario unavailable"), title: t("Saved scenario unavailable") };
+                  return <button className="historyRow" type="button" key={`${item.scenario_id}-${item.created_at}`} disabled={!current} onClick={() => openScenario(item)}>
                     <span className="historyDate">{new Date(item.created_at).toLocaleDateString("it-IT")}</span>
                     <span className="historyPhase">{item.phase_label}</span>
                     <strong>{item.own} {t("vs")} {item.opp}</strong>
                     <span>{item.label}</span>
                     <em>{item.title}</em>
                     <b>→</b>
-                  </button>
-                ))}
+                  </button>;
+                })}
               </div>
               {!history.length && <EmptyState title={t("No analyses yet")}>{t("Run your first tactical scenario and it will be remembered here.")}</EmptyState>}
             </section>
@@ -738,16 +816,7 @@ export default function App() {
           </>
         )}
 
-        {view === "insights" && staff && <section>
-          <header className="workspaceHeader"><div><div className="sectionEyebrow">{t("STAFF ONLY")}</div><h1>{t("Staff Insights")}</h1><p>{t("Feedback and requests stored privately.")}</p></div></header>
-          {insightsError && <p role="alert">{insightsError}</p>}
-          {!insights && !insightsError && <p role="status">{t("Loading insights…")}</p>}
-          {insights && <><div className="historyGrid">
-            <div className="historyCard"><strong>{insights.feedback_count}</strong><p>{t("Feedback submissions")}</p></div>
-            <div className="historyCard"><strong>{insights.positive_feedback}</strong><p>{t("Positive feedback")}</p></div>
-            <div className="historyCard"><strong>{insights.scenario_requests}</strong><p>{t("Scenario requests")}</p></div>
-          </div><h2>{t("Most requested scenarios")}</h2><ul>{insights.top_requested_scenarios.map(([key, count]) => <li key={key}>{requestLabel(key)} — {count}</li>)}</ul></>}
-        </section>}
+        {view === "admin" && staff && <AdminPanel onContentChanged={refreshCatalog} />}
         <footer className="appFooter">
           <span>{t("ProAnalyst Labs v1.1 · Tactical Intelligence Platform")}</span>
           <span>{t("Deterministic video layer today · Motor IA architecture next")}</span>
