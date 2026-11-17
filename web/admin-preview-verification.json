@@ -1,6 +1,6 @@
 {
-  "preview": "https://proanalyst-labs-n648c7cs5-alejandros-projects-a7058275.vercel.app",
-  "checked_at": "2026-11-16T13:42:03.736Z",
+  "preview": "https://proanalyst-labs-c9ks5h5l4-alejandros-projects-a7058275.vercel.app",
+  "checked_at": "2026-11-17T11:50:54.355Z",
   "checks": [
     "all 10 administrative endpoints reject public users with HTTP 403",
     "24 original scenarios published",
@@ -8,6 +8,9 @@
     "missing CSRF token rejected",
     "real browser multipart upload directly to Blob",
     "server MP4 verification and persistent media registration",
+    "upload opens classification with the exact video selected",
+    "classification, draft and publication through administrator UI",
+    "public user generates the exact video by phase, new formations and variant B",
     "uploaded video playback and seek",
     "draft hidden, published scenario visible in a new public browser without deploy",
     "private statistics and feedback",
