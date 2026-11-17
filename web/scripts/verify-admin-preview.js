@@ -20,6 +20,7 @@ for (const ctx of [context, visitor]) {
   await ctx.route(`${origin}/**`, (route) => route.continue({ headers: { ...route.request().headers(), ...protection } }));
 }
 const page = await context.newPage();
+page.setDefaultTimeout(30000);
 const errors = [];
 page.on('pageerror', (error) => errors.push(error.message));
 let csrfToken = '';
@@ -67,31 +68,51 @@ try {
   const uploaded = state.videos.find((video) => video.filename === 'admin-upload-test.mp4' && !video.original);
   assert.ok(uploaded?.verified); testVideoId = uploaded.id; testVideoUrl = uploaded.url;
   report.checks.push('real browser multipart upload directly to Blob', 'server MP4 verification and persistent media registration');
-  const videoCard = page.locator('.adminVideoCard').filter({ hasText: 'admin-upload-test.mp4' });
-  await videoCard.getByRole('button', { name: 'Anteprima video', exact: true }).click();
-  await page.locator('.adminVideoPreview').evaluate(async (video) => { video.muted = true; await video.play(); });
-  await page.waitForFunction(() => document.querySelector('.adminVideoPreview')?.currentTime > 0);
-  await page.locator('.adminVideoPreview').evaluate((video) => { video.pause(); video.currentTime = 1; });
-  await page.waitForFunction(() => { const video = document.querySelector('.adminVideoPreview'); return video && !video.seeking && Math.abs(video.currentTime - 1) < .2; });
-  report.checks.push('uploaded video playback and seek');
-  const seed = before.data.combos[0];
-  const fields = ['phase', 'own', 'opp', 'variant', 'title', 'objective', 'principles', 'key_actions', 'coaching_points', 'risk_notes', 'profile'];
-  const scenario = { ...Object.fromEntries(fields.map((key) => [key, seed[key]])), phase: 'progression',
-    title: 'Verifica automatica riservata alla preview', video_id: testVideoId };
-  let result = await api('admin-scenarios', { revision: state.revision, scenario });
-  assert.equal(result.status, 200); state = result.data;
+  await page.getByRole('heading', { name: 'Nuovo scenario', exact: true }).waitFor();
+  assert.equal(await page.getByLabel('Video dello scenario').inputValue(), testVideoId);
+  const scenario = { phase: 'progression', own: '3-2-4-1', opp: '5-3-2', variant: 'B', title: 'Verifica automatica riservata alla preview' };
+  await page.getByLabel('Fase di gioco', { exact: true }).selectOption(scenario.phase);
+  await page.getByLabel('Sistema della squadra in possesso', { exact: true }).fill(scenario.own);
+  await page.getByLabel('Sistema della squadra in non possesso', { exact: true }).fill(scenario.opp);
+  await page.getByLabel('Variante', { exact: true }).selectOption(scenario.variant);
+  await page.getByLabel('Titolo dello scenario').fill(scenario.title);
+  await page.getByLabel('Obiettivo tattico').fill('Superare la linea intermedia avversaria attraverso il terzo uomo.');
+  for (const label of ['Principi di gioco', 'Azioni chiave', 'Indicazioni per l’allenatore', 'Rischi tattici']) {
+    await page.getByLabel(label, { exact: true }).fill('Coordinare tempi di movimento e distanze tra i reparti.');
+  }
+  const saved = page.waitForResponse(response => response.url() === `${origin}/api/admin-scenarios`);
+  await page.getByRole('button', { name: 'Salva bozza', exact: true }).click();
+  const savedResponse = await saved;
+  assert.equal(savedResponse.status(), 200); state = await savedResponse.json();
   testScenarioId = state.scenarios.find((item) => item.video_id === testVideoId).scenario_id;
   assert.equal((await api('catalog', undefined, { publicUser: true })).data.combos.length, 24);
-  result = await api('admin-scenario-status', { revision: state.revision, scenario_id: testScenarioId, status: 'published' });
-  assert.equal(result.status, 200); state = result.data;
+  const publication = page.waitForResponse(response => response.url() === `${origin}/api/admin-scenario-status`);
+  await page.locator('.adminScenarioCard').filter({ hasText: scenario.title }).getByRole('button', { name: 'Pubblica', exact: true }).click();
+  const publicationResponse = await publication;
+  assert.equal(publicationResponse.status(), 200); state = await publicationResponse.json();
   const published = await api('catalog', undefined, { publicUser: true });
   assert.equal(published.data.combos.length, 25);
-  assert.equal(published.data.combos.find((item) => item.scenario_id === testScenarioId).video_url, testVideoUrl);
+  const publicScenario = published.data.combos.find((item) => item.scenario_id === testScenarioId);
+  assert.equal(publicScenario.video_url, testVideoUrl);
+  for (const field of ['phase', 'own', 'opp', 'variant', 'title']) assert.equal(publicScenario[field], scenario[field]);
+  report.checks.push('upload opens classification with the exact video selected', 'classification, draft and publication through administrator UI');
   // New browser proves publication is visible without another build or an admin cookie.
   const publicPage = await visitor.newPage();
   await publicPage.goto(origin);
   await publicPage.getByRole('button', { name: 'Entra nella demo' }).click();
   await publicPage.getByRole('button', { name: 'Salta introduzione' }).click();
+  await publicPage.getByRole('button', { name: /^Progressione / }).click();
+  await publicPage.locator('.selectorPanel').first().getByRole('button', { name: scenario.own, exact: true }).click();
+  await publicPage.locator('.selectorPanel').last().getByRole('button', { name: scenario.opp, exact: true }).click();
+  await publicPage.getByRole('button', { name: /^Soluzione B / }).click();
+  await publicPage.getByRole('button', { name: 'Genera', exact: false }).click();
+  assert.equal(await publicPage.locator('.analysisVideo').getAttribute('src'), testVideoUrl);
+  assert.equal(await publicPage.locator('.tacticalDetail h2').innerText(), scenario.title);
+  await publicPage.locator('.analysisVideo').evaluate(async (video) => { video.muted = true; await video.play(); });
+  await publicPage.waitForFunction(() => document.querySelector('.analysisVideo')?.currentTime > 0);
+  await publicPage.locator('.analysisVideo').evaluate((video) => { video.pause(); video.currentTime = 1; });
+  await publicPage.waitForFunction(() => { const video = document.querySelector('.analysisVideo'); return video && !video.seeking && Math.abs(video.currentTime - 1) < .2; });
+  report.checks.push('public user generates the exact video by phase, new formations and variant B', 'uploaded video playback and seek');
   await publicPage.getByRole('button', { name: 'Libreria video' }).click();
   await publicPage.getByPlaceholder('Cerca sistema di gioco, principio, obiettivo…').fill(scenario.title);
   await publicPage.locator('.libraryCard').getByRole('button', { name: 'Apri analisi' }).click();
@@ -109,7 +130,7 @@ try {
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
   await page.screenshot({ path: 'test-results/admin-preview-mobile.png', fullPage: true });
   report.checks.push('private statistics and feedback', 'desktop and mobile panel/editor');
-  result = await api('admin-scenario-status', { revision: state.revision, scenario_id: testScenarioId, status: 'inactive' });
+  const result = await api('admin-scenario-status', { revision: state.revision, scenario_id: testScenarioId, status: 'inactive' });
   assert.equal(result.status, 200);
   assert.equal((await api('catalog', undefined, { publicUser: true })).data.combos.length, 24);
   report.checks.push('deactivated scenario immediately removed from public catalog');

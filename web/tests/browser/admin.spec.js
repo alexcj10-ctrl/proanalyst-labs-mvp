@@ -7,8 +7,7 @@ const password = 'browser-test-only-password';
 const hash = await passwordHash(password);
 
 // Browser UI calls the real handler and validators against an isolated test store.
-async function backend(page) {
-  const { store } = memoryStore();
+async function backend(page, store = memoryStore().store) {
   const handler = createHandler({ getStore: () => store, env: { STAFF_USER: 'owner', STAFF_PASSWORD_HASH: hash } });
   await page.route('**/api/**', async (route) => {
     const request = route.request();
@@ -30,19 +29,23 @@ async function login(page) {
   await page.getByRole('button', { name: 'Pannello amministratore' }).click();
 }
 
-test('real owner session, editor persistence, publication, user visibility and logout', async ({ page }) => {
+test('video classification persists and public selections generate the published scenario', async ({ page, browser }) => {
   const store = await backend(page);
   await login(page);
   await expect(page.locator('.adminVideoCard')).toHaveCount(24);
-  await page.getByRole('button', { name: 'Gestione scenari', exact: true }).click();
-  await page.getByRole('button', { name: 'Nuovo scenario', exact: true }).click();
+  const videoCard = page.locator('.adminVideoCard').first();
+  const filename = await videoCard.locator('h3').innerText();
+  await videoCard.getByRole('button', { name: 'Classifica video', exact: true }).click();
+  await expect(page.getByLabel('Video dello scenario')).toHaveValue(filename);
   await page.getByLabel('Fase di gioco', { exact: true }).selectOption('progression');
+  await page.getByLabel('Sistema della squadra in possesso', { exact: true }).fill('3-2-4-1');
+  await page.getByLabel('Sistema della squadra in non possesso', { exact: true }).fill('5-3-2');
+  await page.getByLabel('Variante', { exact: true }).selectOption('B');
   await page.getByLabel('Titolo dello scenario').fill('Prova di progressione attraverso il terzo uomo');
   await page.getByLabel('Obiettivo tattico').fill('Superare la linea intermedia con il terzo uomo.');
   for (const label of ['Principi di gioco', 'Azioni chiave', 'Indicazioni per l’allenatore', 'Rischi tattici']) {
     await page.getByLabel(label, { exact: true }).fill('Controllare le distanze tra i reparti.');
   }
-  await page.getByLabel('Video dello scenario').selectOption({ index: 1 });
   await page.getByRole('button', { name: 'Salva bozza', exact: true }).click();
   await expect(page.getByRole('status')).toContainText('Bozza salvata');
   expect((await getPublishedCatalog(store)).combos).toHaveLength(24);
@@ -50,6 +53,26 @@ test('real owner session, editor persistence, publication, user visibility and l
   await created.getByRole('button', { name: 'Pubblica', exact: true }).click();
   await expect(page.getByRole('status')).toContainText('Scenario pubblicato');
   expect((await getPublishedCatalog(store)).combos).toHaveLength(25);
+  const published = (await getPublishedCatalog(store)).combos.find((scenario) => scenario.title === 'Prova di progressione attraverso il terzo uomo');
+  expect(published).toMatchObject({ phase: 'progression', own: '3-2-4-1', opp: '5-3-2', variant: 'B', video: filename });
+  const visitor = await browser.newPage();
+  await backend(visitor, store);
+  await visitor.goto('/');
+  await visitor.getByRole('button', { name: 'Entra nella demo' }).click();
+  await visitor.getByRole('button', { name: 'Salta introduzione' }).click();
+  await visitor.getByRole('button', { name: /^Progressione / }).click();
+  await visitor.locator('.selectorPanel').first().getByRole('button', { name: '3-2-4-1', exact: true }).click();
+  await visitor.locator('.selectorPanel').last().getByRole('button', { name: '5-3-2', exact: true }).click();
+  await expect(visitor.locator('.solutionsGrid')).toContainText('Soluzione B');
+  await visitor.getByRole('button', { name: 'Genera', exact: false }).click();
+  await expect(visitor.locator('.tacticalDetail h2')).toHaveText(published.title);
+  await expect(visitor.locator('.analysisVideo')).toHaveAttribute('src', published.video_url);
+  await expect(visitor.getByRole('button', { name: 'Pannello amministratore' })).toHaveCount(0);
+  await visitor.getByRole('button', { name: 'Libreria video' }).click();
+  await visitor.locator('.libraryToolbar select').selectOption('progression');
+  await expect(visitor.locator('.libraryCard')).toHaveCount(1);
+  await expect(visitor.locator('.libraryCard')).toContainText(published.title);
+  await visitor.close();
   await page.reload();
   await page.getByRole('button', { name: 'Pannello amministratore' }).click();
   await page.getByRole('button', { name: 'Gestione scenari', exact: true }).click();

@@ -16,8 +16,8 @@ const emptyScenario = () => ({
 const editScenario = (scenario) => ({ ...scenario, video_id: scenario.video_id || '',
   ...Object.fromEntries(listFields.map((field) => [field, scenario[field].join('\n')])) });
 
-function ScenarioEditor({ scenario, content, busy, onSave, onClose }) {
-  const [draft, setDraft] = useState(() => scenario ? editScenario(scenario) : emptyScenario());
+function ScenarioEditor({ scenario, initialVideoId = '', content, busy, onSave, onClose }) {
+  const [draft, setDraft] = useState(() => scenario ? editScenario(scenario) : { ...emptyScenario(), video_id: initialVideoId });
   const change = (field, value) => setDraft((previous) => ({ ...previous, [field]: value }));
   const save = (event) => {
     event.preventDefault();
@@ -45,6 +45,7 @@ function ScenarioEditor({ scenario, content, busy, onSave, onClose }) {
         </div>
         <datalist id="admin-formations">{content.formations.map((formation) => <option key={formation} value={formation} />)}</datalist>
         <p className="adminFieldHint">{a('formationHint')}</p>
+        <p className="adminHint">{a('classificationHint')} <strong>{phaseLabel(draft.phase)} · {draft.own} / {draft.opp} · {a(`variant${draft.variant}`)}</strong></p>
         <label>{a('titleField')}<input value={draft.title} onChange={(event) => change('title', event.target.value)} maxLength={160} required /></label>
         <label>{a('objective')}<textarea value={draft.objective} onChange={(event) => change('objective', event.target.value)} maxLength={2000} rows={3} required /></label>
         <div className="adminFormGrid">
@@ -144,16 +145,20 @@ export default function AdminPanel({ onContentChanged }) {
       setValidating(true);
       const next = await serverRequest('admin-upload-complete', { upload_id: intent.upload_id });
       if (!Array.isArray(next.videos) || !Number.isInteger(next.revision)) throw new Error(a('saveFailure'));
-      setContent(next); setNotice(a('uploadSuccess')); setFile(null);
+      const uploaded = next.videos.find((video) => video.id === intent.upload_id && video.verified && !video.deleting);
+      if (!uploaded) throw new Error(a('saveFailure'));
+      setContent(next); setFile(null);
       if (fileInput.current) fileInput.current.value = '';
+      selectEditor(null, uploaded.id, 'uploadSuccess');
     } catch (err) {
       // Blob transport errors may contain English or signed URLs. Keep them out of the interface.
       setError(err.status ? err.message : a('uploadError'));
     } finally { setBusy(false); setUploadProgress(null); setValidating(false); }
   };
 
-  const selectEditor = (scenario) => {
-    setEditor({ scenario }); setNotice(''); setError('');
+  const selectEditor = (scenario, initialVideoId = '', noticeKey = '') => {
+    setSection('scenarios'); setScenarioSearch(''); setStatusFilter('all'); setPreviewVideo(null);
+    setEditor({ scenario, initialVideoId }); setNotice(noticeKey ? a(noticeKey) : ''); setError('');
     requestAnimationFrame(() => editorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
   };
   const videos = content?.videos.filter((video) => video.filename.toLocaleLowerCase('it-IT').includes(videoSearch.trim().toLocaleLowerCase('it-IT'))) || [];
@@ -192,6 +197,7 @@ export default function AdminPanel({ onContentChanged }) {
         return <article className="adminVideoCard" key={video.id}>
           <div className="adminVideoIcon" aria-hidden="true">▷</div><div className="adminVideoInfo"><h3>{video.filename}</h3><p>{formatBytes(video.size)} · {a(video.original ? 'original' : 'verified')}</p></div>
           <div className="adminActions"><button className="secondaryButton" type="button" onClick={() => setPreviewVideo(previewVideo?.id === video.id ? null : video)}>{a(previewVideo?.id === video.id ? 'closePreview' : 'previewVideo')}</button>
+            <button className="secondaryButton" type="button" disabled={busy || !video.verified || video.deleting} onClick={() => selectEditor(null, video.id)}>{a('classifyVideo')}</button>
             {!video.original && <button className="textButton dangerButton" type="button" disabled={busy || inUse} title={inUse ? a('videoInUse') : undefined} onClick={() => setConfirm({ kind: 'video', item: video })}>{a('deleteVideo')}</button>}
           </div>
           {previewVideo?.id === video.id && <video className="adminVideoPreview" src={video.url} controls playsInline preload="metadata" aria-label={video.filename} />}
@@ -202,7 +208,7 @@ export default function AdminPanel({ onContentChanged }) {
 
     {content && section === 'scenarios' && <>
       <div className="adminToolbar"><input value={scenarioSearch} onChange={(event) => setScenarioSearch(event.target.value)} placeholder={a('scenarioSearch')} aria-label={a('scenarioSearch')} /><select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} aria-label={a('allStatuses')}><option value="all">{a('allStatuses')}</option>{['published', 'draft', 'inactive'].map((status) => <option key={status} value={status}>{a(`status.${status}`)}</option>)}</select><button className="primaryButton" onClick={() => selectEditor(null)} disabled={busy}>{a('newScenario')}</button></div>
-      <div ref={editorRef} className="adminEditorAnchor">{editor && <ScenarioEditor key={editor.scenario?.scenario_id || 'new'} scenario={editor.scenario} content={content} busy={busy} onClose={() => setEditor(null)} onSave={(scenario) => mutate('admin-scenarios', { scenario }, 'draftSaved')} />}</div>
+      <div ref={editorRef} className="adminEditorAnchor">{editor && <ScenarioEditor key={editor.scenario?.scenario_id || `new-${editor.initialVideoId}`} scenario={editor.scenario} initialVideoId={editor.initialVideoId} content={content} busy={busy} onClose={() => setEditor(null)} onSave={(scenario) => mutate('admin-scenarios', { scenario }, 'draftSaved')} />}</div>
       <div className="adminScenarioList">{scenarios.map((scenario) => <article className="adminScenarioCard" key={scenario.scenario_id}>
         <div className="adminScenarioMeta"><span className={`adminStatus ${scenario.status}`}>{a(`status.${scenario.status}`)}</span>{scenario.original && <span className="muted">{a('originalScenario')}</span>}<span>{phaseLabel(scenario.phase)} · {scenario.own} / {scenario.opp} · {a(`variant${scenario.variant}`)}</span></div>
         <h3>{scenario.title}</h3><p>{scenario.objective}</p>

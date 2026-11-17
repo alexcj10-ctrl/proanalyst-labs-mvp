@@ -52,6 +52,12 @@ Il pannello usa `uploadPresigned` di Vercel Blob con multipart. Il percorso è a
 4. `admin-upload-complete` controlla metadati reali, store/URL, MIME, dimensione e intestazione ISO BMFF/MP4 con una richiesta Range limitata a 4096 byte. Il file viene aggiunto al registro solo dopo i controlli.
 
 Gli upload non sono pubblicazioni automatiche: occorre associare il video a uno scenario e pubblicarlo.
+Dopo un upload verificato si apre automaticamente l’editor con il video appena caricato già selezionato.
+Il pulsante **Classifica video**, presente anche sui filmati già in libreria, apre lo stesso percorso.
+L’amministratore sceglie fase, sistema della squadra in possesso (`own`), sistema della squadra in non possesso
+(`opp`) e variante, quindi inserisce titolo, obiettivo e contenuti tattici. **Salva bozza** conserva il lavoro;
+**Pubblica** rende lo scenario selezionabile in Genera e nella Libreria senza un nuovo deploy.
+Una combinazione fase/sistemi/variante già pubblicata viene rifiutata per mantenere la selezione deterministica.
 Lo store video è pubblico, come richiesto per la demo: chi possiede un URL Blob può accedere al file;
 disattivare uno scenario lo rimuove dal catalogo dell’app, non revoca URL pubblici già condivisi.
 Le bozze, le sessioni, i feedback e le richieste sono invece in uno store **privato**.
