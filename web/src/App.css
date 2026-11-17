@@ -75,6 +75,12 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .loginPanel .textButton { display: block; margin: 16px auto 0; }
 .staffForm { margin-top: 12px; padding: 16px; border: 1px solid var(--border); border-radius: 16px; background: rgba(255,255,255,.025); display: grid; gap: 12px; }
 .staffForm label { display: grid; gap: 6px; color: var(--muted); font-size: 12px; }
+.staffPasswordField { display: grid; gap: 6px; min-width: 0; }
+.staffPasswordControl { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.staffPasswordControl input { flex: 1 1 0; width: 0; min-width: 0; }
+.staffPasswordControl .secondaryButton { flex: 0 0 auto; min-height: 40px; padding: 0 10px; font-size: 11px; white-space: nowrap; }
+.staffPreviewNotice { margin: 0; padding: 12px; border-radius: 10px; background: var(--purple-soft); color: #c9baff; font-size: 12px; line-height: 1.6; }
+.staffPreviewNotice a { display: inline-block; color: var(--text); font-weight: 700; text-underline-offset: 3px; }
 .staffForm input, .libraryToolbar input, .libraryToolbar select, .requestBox textarea, .feedbackPanel input {
   color: var(--text); border: 1px solid var(--border); background: #090b11; border-radius: 11px; padding: 11px 12px; outline: none;
 }

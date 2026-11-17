@@ -141,5 +141,9 @@
   "Retry catalog": "Riprova a caricare il catalogo",
   "Saved scenario unavailable": "Scenario non disponibile",
   "Saved scenario preserved": "Il preferito è conservato. Potrai riaprirlo quando lo scenario sarà nuovamente pubblicato.",
-  "Remove favorite": "Rimuovi dai preferiti"
+  "Remove favorite": "Rimuovi dai preferiti",
+  "Show password": "Mostra password",
+  "Hide password": "Nascondi password",
+  "Open the public site": "Apri il sito pubblico",
+  "This is a verification address. Use the public site for your usual sign-in.": "Stai utilizzando un indirizzo di verifica. Per l’accesso abituale usa il sito pubblico."
 }

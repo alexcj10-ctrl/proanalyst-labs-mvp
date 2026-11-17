@@ -10,6 +10,7 @@ const WHITEPAPER_URL = "/ProAnalystLabs_Whitepaper.pdf";
 const INTRO_VIDEO_URL = "/intro.mp4";
 const STORAGE_HISTORY = "proanalyst_history_v11";
 const STORAGE_FAVORITES = "proanalyst_favorites_v11";
+const PUBLIC_SITE_URL = "https://proanalyst-labs-mvp.vercel.app";
 
 const PHASE_DESCRIPTIONS = {
   build_up: t("Create the conditions to escape the first pressure with control."),
@@ -164,6 +165,7 @@ export default function App() {
   const [staff, setStaff] = useState(false);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [authError, setAuthError] = useState("");
   const [authBusy, setAuthBusy] = useState(false);
   const [catalog, setCatalog] = useState(null);
@@ -198,6 +200,8 @@ export default function App() {
   const [favorites, setFavorites] = useState(() => readStoredJson(STORAGE_FAVORITES, []));
   const [librarySearch, setLibrarySearch] = useState("");
   const [libraryPhase, setLibraryPhase] = useState("all");
+  const isPreviewHost = /^proanalyst-labs-.+\.vercel\.app$/.test(window.location.hostname) &&
+    window.location.hostname !== "proanalyst-labs-mvp.vercel.app";
 
   const refreshCatalog = useCallback(async () => {
     const request = ++catalogRequest.current;
@@ -273,6 +277,8 @@ export default function App() {
 
   const logout = async () => {
     authRequest.current++;
+    setShowPassword(false);
+    setPassword("");
     if (staff) {
       try { await serverRequest("logout", {}); }
       catch (error) { setMessage(error.message); return; }
@@ -356,9 +362,10 @@ export default function App() {
 
   const staffLogin = async (event) => {
     event.preventDefault(); setAuthBusy(true); setAuthError("");
+    setShowPassword(false);
     authRequest.current++;
     try {
-      const result = await serverRequest("login", { username, password });
+      const result = await serverRequest("login", { username: username.trim(), password });
       if (result.role !== "admin" || result.admin !== true) throw new Error(t("Staff access was not confirmed."));
       setPassword(""); setStaff(true); handleDemoLogin();
     } catch (error) { setAuthError(error.message); }
@@ -428,14 +435,21 @@ export default function App() {
               <span>→</span>
             </button>
 
-            <button className="textButton" type="button" onClick={() => setStaffOpen((prev) => !prev)}>
+            <button className="textButton" type="button" onClick={() => { setStaffOpen((prev) => !prev); setShowPassword(false); }}>
               {staffOpen ? t("Hide staff access") : t("Staff access")}
             </button>
 
             {staffOpen && (
               <form className="staffForm" onSubmit={staffLogin}>
-                <label>{t("User")}<input value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="username" required /></label>
-                <label>{t("Password")}<input type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" required /></label>
+                {isPreviewHost && <p className="staffPreviewNotice">{t("This is a verification address. Use the public site for your usual sign-in.")} <a href={PUBLIC_SITE_URL}>{t("Open the public site")}</a></p>}
+                <label>{t("User")}<input name="username" value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="username" autoCapitalize="none" autoCorrect="off" spellCheck={false} required /></label>
+                <div className="staffPasswordField">
+                  <label htmlFor="administrator-password">{t("Password")}</label>
+                  <div className="staffPasswordControl">
+                    <input id="administrator-password" name="password" type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" autoCapitalize="none" autoCorrect="off" spellCheck={false} required />
+                    <button className="secondaryButton" type="button" aria-pressed={showPassword} aria-controls="administrator-password" disabled={authBusy} onClick={() => setShowPassword((previous) => !previous)}>{showPassword ? t("Hide password") : t("Show password")}</button>
+                  </div>
+                </div>
                 <button className="secondaryButton" disabled={authBusy}>{authBusy ? t("Signing in…") : t("Sign in")}</button>
                 {authError && <p role="alert">{authError}</p>}
               </form>

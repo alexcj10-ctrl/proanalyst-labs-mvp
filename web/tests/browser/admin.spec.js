@@ -96,3 +96,29 @@ test('administrator panel and editor fit mobile screens', async ({ page }) => {
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
   await page.screenshot({ path: 'test-results/admin-mobile.png', fullPage: true });
 });
+
+test('mobile owner login supports pasted usernames and optional password visibility', async ({ page }) => {
+  await backend(page);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Accesso amministratore', exact: true }).click();
+  const username = page.getByLabel('Nome utente', { exact: true });
+  const secret = page.getByLabel('Password', { exact: true });
+  await expect(username).toHaveAttribute('autocapitalize', 'none');
+  await expect(username).toHaveAttribute('autocorrect', 'off');
+  await username.fill('  owner  ');
+  await secret.fill(password);
+  await expect(secret).toHaveAttribute('type', 'password');
+  await page.getByRole('button', { name: 'Mostra password', exact: true }).click();
+  await expect(secret).toHaveAttribute('type', 'text');
+  await expect(secret).toHaveValue(password);
+  await page.getByRole('button', { name: 'Nascondi password', exact: true }).click();
+  await expect(secret).toHaveAttribute('type', 'password');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
+  const request = page.waitForRequest('**/api/login');
+  await page.getByRole('button', { name: 'Accedi', exact: true }).click();
+  expect((await request).postDataJSON()).toEqual({ username: 'owner', password });
+  await page.getByRole('button', { name: 'Salta introduzione' }).click();
+  await page.getByRole('combobox', { name: 'Sezione', exact: true }).selectOption('admin');
+  await expect(page.getByRole('heading', { name: 'Pannello amministratore', exact: true })).toBeVisible();
+});

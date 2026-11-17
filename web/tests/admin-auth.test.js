@@ -70,6 +70,15 @@ test('only the configured owner can authenticate and sessions expose no credenti
   }
 });
 
+test('copied username whitespace is ignored while passwords and owner identity remain exact', async () => {
+  const f = authFixture();
+  const login = await f.call('login', { username: '  owner-test\n', password: ownerPassword });
+  assert.equal(login.code, 200);
+  assert.equal(login.body.role, 'admin');
+  assert.equal((await f.call('login', { username: 'owner-test', password: ` ${ownerPassword} ` })).code, 401);
+  assert.equal((await f.call('login', { username: 'another-user', password: ownerPassword })).code, 401);
+});
+
 test('administrative writes and authenticated logout require a matching session CSRF token', async () => {
   let mediaCalls = 0;
   const deniedOperation = async () => { mediaCalls++; throw new Error('Must never be reached'); };

@@ -110,7 +110,7 @@ export function createHandler({ getStore = privateStore, env = process.env, now 
         if (typeof body.username !== 'string' || typeof body.password !== 'string' || body.username.length > 100 || body.password.length > 256) throw failure(400, 'Invalid credentials format');
         await rateLimit(store, `login/${subject}`, 8, 15 * 60 * 1000, now());
         const valid = await checkPassword(body.password, env.STAFF_PASSWORD_HASH);
-        if (!valid || body.username !== env.STAFF_USER) throw failure(401, 'Invalid credentials');
+        if (!valid || body.username.trim() !== env.STAFF_USER) throw failure(401, 'Invalid credentials');
         const token = randomBytes(32).toString('hex');
         const csrfToken = randomBytes(32).toString('hex');
         await store.create(`sessions/${digest(token)}.json`, {
