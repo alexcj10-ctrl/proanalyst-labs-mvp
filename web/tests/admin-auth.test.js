@@ -5,7 +5,7 @@ import { authFixture, ownerPassword } from './helpers/auth-fixture.js';
 
 const administrative = [
   ['insights'], ['admin-content'], ['admin-events'],
-  ['admin-scenarios', {}], ['admin-scenario-status', {}], ['admin-scenario-delete', {}],
+  ['admin-scenarios', { publish: true }], ['admin-scenario-status', {}], ['admin-scenario-delete', {}],
   ['admin-video-delete', {}], ['admin-upload-intent', {}],
   ['admin-upload-token', { type: 'blob.generate-presigned-url', payload: { pathname: 'forged.mp4' } }],
   ['admin-upload-complete', {}],

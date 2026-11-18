@@ -69,6 +69,100 @@ test('an edit becomes a draft; publishing rejects ambiguous deterministic combin
   assert.equal((await getPublishedCatalog(store)).combos.length, 24);
 });
 
+test('save and publish creates and edits a published scenario in one versioned write', async () => {
+  const { store } = memoryStore();
+  const writes = [];
+  const writeVersion = store.writeVersion;
+  store.writeVersion = async (path, value, etag) => {
+    writes.push(structuredClone(value));
+    return writeVersion(path, value, etag);
+  };
+  let state = await saveScenario(store, { revision: 0, scenario: scenarioInput(), publish: true });
+  const created = state.scenarios.find((item) => !item.original);
+  assert.equal(created.status, 'published');
+  assert.equal(state.revision, 1);
+  assert.equal(writes.length, 1);
+  assert.equal(writes[0].scenarios.find((item) => item.scenario_id === created.scenario_id).status, 'published');
+  assert.equal((await getPublishedCatalog(store)).combos.length, 25);
+
+  state = await saveScenario(store, { revision: state.revision, publish: true, scenario: scenarioInput({
+    scenario_id: created.scenario_id, title: 'Progressione con il terzo uomo',
+  }) });
+  assert.equal(state.revision, 2);
+  assert.equal(writes.length, 2);
+  assert.equal(writes[1].scenarios.find((item) => item.scenario_id === created.scenario_id).status, 'published');
+  const published = await getPublishedCatalog(store);
+  assert.equal(published.combos.length, 25);
+  assert.equal(published.combos.find((item) => item.scenario_id === created.scenario_id).title, 'Progressione con il terzo uomo');
+  assert.equal(state.scenarios.filter((item) => item.original).length, 24);
+});
+
+test('save and publish updates an original without hiding it or duplicating its technical ID', async () => {
+  const { store } = memoryStore();
+  const original = sourceCatalog.combos[0];
+  const state = await saveScenario(store, { revision: 0, publish: true, scenario: scenarioInput({
+    scenario_id: original.scenario_id, phase: original.phase, title: 'Uomo libero nella prima costruzione',
+  }) });
+  assert.equal(state.revision, 1);
+  assert.equal(state.scenarios.length, 24);
+  const published = await getPublishedCatalog(store);
+  assert.equal(published.combos.length, 24);
+  assert.equal(published.combos.filter((item) => item.scenario_id === original.scenario_id).length, 1);
+  assert.equal(published.combos.find((item) => item.scenario_id === original.scenario_id).title, 'Uomo libero nella prima costruzione');
+});
+
+test('failed atomic publication keeps the previous published scenario and revision intact', async () => {
+  const { store, values, versions } = memoryStore();
+  const state = await saveScenario(store, { revision: 0, publish: true, scenario: scenarioInput() });
+  const created = state.scenarios.find((item) => !item.original);
+  const beforePublic = await getPublishedCatalog(store);
+  const beforeValues = structuredClone([...values]);
+  const beforeVersions = structuredClone([...versions]);
+  const existingInput = scenarioInput({ scenario_id: created.scenario_id, title: 'Modifica da non pubblicare' });
+  const duplicate = sourceCatalog.combos[0];
+  for (const request of [
+    { publish: true, scenario: { ...existingInput, phase: duplicate.phase, own: duplicate.own, opp: duplicate.opp, variant: duplicate.variant } },
+    { publish: true, scenario: { ...existingInput, video_id: null } },
+    { publish: true, scenario: { ...existingInput, video_id: 'video-non-verificato' } },
+    ...['true', 1, 0, null, {}, []].map((publish) => ({ publish, scenario: existingInput })),
+  ]) {
+    await assert.rejects(saveScenario(store, { revision: state.revision, ...request }), (error) => [400, 409].includes(error.status));
+    assert.deepEqual(await getAdminContent(store), state);
+    assert.deepEqual(await getPublishedCatalog(store), beforePublic);
+    assert.deepEqual([...values], beforeValues);
+    assert.deepEqual([...versions], beforeVersions);
+  }
+});
+
+test('invalid publication of a new scenario never creates a draft or changes the original catalog', async () => {
+  const { store, values } = memoryStore();
+  const before = await getAdminContent(store);
+  for (const scenario of [scenarioInput({ video_id: null }), scenarioInput({ phase: sourceCatalog.combos[0].phase })]) {
+    await assert.rejects(saveScenario(store, { revision: 0, scenario, publish: true }), (error) => [400, 409].includes(error.status));
+    assert.equal(values.size, 0);
+    assert.deepEqual(await getAdminContent(store), before);
+  }
+});
+
+test('concurrent save and publish operations honor ETag and stale client revision checks', async () => {
+  const { store } = memoryStore();
+  const outcomes = await Promise.allSettled([
+    saveScenario(store, { revision: 0, publish: true, scenario: scenarioInput({ title: 'Prima pubblicazione' }) }),
+    saveScenario(store, { revision: 0, publish: true, scenario: scenarioInput({ title: 'Seconda pubblicazione' }) }),
+  ]);
+  assert.equal(outcomes.filter((result) => result.status === 'fulfilled').length, 1);
+  assert.equal(outcomes.find((result) => result.status === 'rejected').reason.status, 409);
+  const state = await getAdminContent(store);
+  assert.equal(state.revision, 1);
+  assert.equal(state.scenarios.filter((item) => item.status === 'draft').length, 0);
+  assert.equal((await getPublishedCatalog(store)).combos.length, 25);
+  const created = state.scenarios.find((item) => !item.original);
+  await assert.rejects(saveScenario(store, { revision: 0, publish: true,
+    scenario: scenarioInput({ scenario_id: created.scenario_id, title: 'Modifica obsoleta' }),
+  }), { status: 409 });
+  assert.deepEqual(await getAdminContent(store), state);
+});
+
 test('ETag and client revision prevent lost updates from simultaneous editors', async () => {
   const { store } = memoryStore();
   const results = await Promise.allSettled([

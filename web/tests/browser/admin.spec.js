@@ -50,7 +50,7 @@ test('video classification persists and public selections generate the published
   await expect(page.getByRole('status')).toContainText('Bozza salvata');
   expect((await getPublishedCatalog(store)).combos).toHaveLength(24);
   const created = page.locator('.adminScenarioCard').filter({ hasText: 'Prova di progressione attraverso il terzo uomo' });
-  await created.getByRole('button', { name: 'Pubblica', exact: true }).click();
+  await page.getByRole('status').getByRole('button', { name: 'Pubblica ora', exact: true }).click();
   await expect(page.getByRole('status')).toContainText('Scenario pubblicato');
   expect((await getPublishedCatalog(store)).combos).toHaveLength(25);
   const published = (await getPublishedCatalog(store)).combos.find((scenario) => scenario.title === 'Prova di progressione attraverso il terzo uomo');
@@ -88,6 +88,46 @@ test('video classification persists and public selections generate the published
   await expect(page.getByRole('button', { name: 'Pannello amministratore' })).toHaveCount(0);
   await page.getByRole('button', { name: 'Libreria video' }).click();
   await expect(page.locator('.libraryCard')).toHaveCount(24);
+});
+
+test('save and publish opens the exact analysis and failed publication preserves the editor', async ({ page }) => {
+  const store = await backend(page);
+  await login(page);
+  await page.locator('.adminVideoCard').first().getByRole('button', { name: 'Classifica video', exact: true }).click();
+  await page.getByLabel('Sistema della squadra in possesso', { exact: true }).fill('4-4-2');
+  await page.getByLabel('Sistema della squadra in non possesso', { exact: true }).fill('3-4-2-1');
+  await page.getByLabel('Titolo dello scenario').fill('Progressione per vie interne');
+  await page.getByLabel('Obiettivo tattico').fill('Trovare il terzo uomo per superare la prima pressione.');
+  for (const label of ['Principi di gioco', 'Azioni chiave', 'Indicazioni per l’allenatore', 'Rischi tattici']) {
+    await page.getByLabel(label, { exact: true }).fill('Controllare distanze e tempi di smarcamento.');
+  }
+  const request = page.waitForRequest('**/api/admin-scenarios');
+  await page.getByRole('button', { name: 'Salva e pubblica', exact: true }).click();
+  expect((await request).postDataJSON().publish).toBe(true);
+  await expect(page.getByRole('status')).toContainText('Scenario pubblicato');
+  const catalog = await getPublishedCatalog(store);
+  const published = catalog.combos.find(s => s.own === '4-4-2' && s.opp === '3-4-2-1');
+  expect(catalog.revision).toBe(1);
+  expect(published.phase).toBe('build_up');
+  await page.getByRole('button', { name: 'Apri in Analisi tattica', exact: true }).click();
+  await expect(page.locator('.phaseCard.active')).toContainText('Costruzione dal basso');
+  await expect(page.locator('.selectorPanel').first().getByRole('button', { name: '4-4-2', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('.selectorPanel').last().getByRole('button', { name: '3-4-2-1', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('.analysisVideo')).toHaveAttribute('src', published.video_url);
+  await expect(page.locator('.tacticalDetail h2')).toHaveText(published.title);
+  await page.getByRole('button', { name: 'Pannello amministratore' }).click();
+  await page.locator('.adminVideoCard').first().getByRole('button', { name: 'Classifica video', exact: true }).click();
+  await page.getByLabel('Sistema della squadra in possesso', { exact: true }).fill('4-4-2');
+  await page.getByLabel('Sistema della squadra in non possesso', { exact: true }).fill('3-4-2-1');
+  await page.getByLabel('Titolo dello scenario').fill('Tentativo duplicato da conservare nel modulo');
+  await page.getByLabel('Obiettivo tattico').fill('Conservare il lavoro se la pubblicazione viene rifiutata.');
+  for (const label of ['Principi di gioco', 'Azioni chiave', 'Indicazioni per l’allenatore', 'Rischi tattici']) {
+    await page.getByLabel(label, { exact: true }).fill('Non sovrascrivere lo scenario pubblicato.');
+  }
+  await page.getByRole('button', { name: 'Salva e pubblica', exact: true }).click();
+  await expect(page.getByRole('alert')).toContainText('Esiste già uno scenario pubblicato');
+  await expect(page.getByLabel('Titolo dello scenario')).toHaveValue('Tentativo duplicato da conservare nel modulo');
+  expect(await getPublishedCatalog(store)).toEqual(catalog);
 });
 
 test('public browser flags never expose the admin panel; catalog failures hide stale content', async ({ page }) => {

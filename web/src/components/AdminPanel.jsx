@@ -25,7 +25,7 @@ function ScenarioEditor({ scenario, initialVideoId = '', content, busy, onSave, 
     next.video_id = next.video_id || null;
     if (scenario) next.scenario_id = scenario.scenario_id;
     for (const field of listFields) next[field] = draft[field].split('\n').map((line) => line.trim()).filter(Boolean);
-    void onSave(next);
+    void onSave(next, event.nativeEvent.submitter?.value === 'publish');
   };
   const phases = content.phase_roadmap?.map((item) => item.id) || content.phases;
   return <section className="adminEditor" aria-labelledby="scenario-editor-title">
@@ -58,19 +58,24 @@ function ScenarioEditor({ scenario, initialVideoId = '', content, busy, onSave, 
           <option value="">{a('noVideo')}</option>
           {content.videos.filter((video) => video.verified && !video.deleting).map((video) => <option key={video.id} value={video.id}>{video.filename}</option>)}
         </select></label>
-        <div className="adminActions"><button className="primaryButton" type="submit">{a(busy ? 'working' : 'saveDraft')}</button><button className="secondaryButton" type="button" onClick={onClose}>{a('cancel')}</button></div>
+        <div className="adminActions">
+          <button className="primaryButton" type="submit" value="publish" disabled={!draft.video_id} title={!draft.video_id ? a('videoRequired') : undefined}>{a(busy ? 'working' : 'saveAndPublish')}</button>
+          <button className="secondaryButton" type="submit" value="draft">{a('saveDraft')}</button>
+          <button className="textButton" type="button" onClick={onClose}>{a('cancel')}</button>
+        </div>
       </fieldset>
     </form>
   </section>;
 }
 
-export default function AdminPanel({ onContentChanged }) {
+export default function AdminPanel({ onContentChanged, onOpenAnalysis }) {
   const [section, setSection] = useState('videos');
   const [content, setContent] = useState(null);
   const [insights, setInsights] = useState(null);
   const [events, setEvents] = useState(null);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
+  const [recentScenarioId, setRecentScenarioId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [file, setFile] = useState(null);
@@ -120,6 +125,9 @@ export default function AdminPanel({ onContentChanged }) {
     try {
       const next = await serverRequest(action, { revision: content.revision, ...body });
       if (!Number.isInteger(next.revision) || !Array.isArray(next.scenarios)) throw new Error(a('saveFailure'));
+      const affected = next.scenarios.find((scenario) => scenario.scenario_id === (body.scenario_id || body.scenario?.scenario_id)) ||
+        (action === 'admin-scenarios' ? next.scenarios.find((scenario) => !content.scenarios.some((previous) => previous.scenario_id === scenario.scenario_id)) : null);
+      setRecentScenarioId(affected?.scenario_id || null);
       setContent(next); setNotice(a(success)); setConfirm(null); setEditor(null);
       await onContentChanged();
     } catch (err) {
@@ -158,12 +166,14 @@ export default function AdminPanel({ onContentChanged }) {
 
   const selectEditor = (scenario, initialVideoId = '', noticeKey = '') => {
     setSection('scenarios'); setScenarioSearch(''); setStatusFilter('all'); setPreviewVideo(null);
+    setRecentScenarioId(null);
     setEditor({ scenario, initialVideoId }); setNotice(noticeKey ? a(noticeKey) : ''); setError('');
     requestAnimationFrame(() => editorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
   };
   const videos = content?.videos.filter((video) => video.filename.toLocaleLowerCase('it-IT').includes(videoSearch.trim().toLocaleLowerCase('it-IT'))) || [];
   const scenarios = content?.scenarios.filter((scenario) => (statusFilter === 'all' || scenario.status === statusFilter) &&
     `${scenario.title} ${phaseLabel(scenario.phase)} ${scenario.own} ${scenario.opp} ${scenario.label}`.toLocaleLowerCase('it-IT').includes(scenarioSearch.trim().toLocaleLowerCase('it-IT'))) || [];
+  const recentScenario = content?.scenarios.find((scenario) => scenario.scenario_id === recentScenarioId);
 
   return <section className="adminPanel">
     <header className="workspaceHeader">
@@ -175,7 +185,15 @@ export default function AdminPanel({ onContentChanged }) {
       <button className="secondaryButton" onClick={() => void refresh()} disabled={busy || loading}>{a('refresh')}</button>
     </div>
     {error && <div className="errorNotice" role="alert">{error}</div>}
-    {notice && <div className="adminSuccess" role="status">{notice}</div>}
+    {notice && <div className="adminSuccess" role="status">{notice}
+      {recentScenario && <>
+        <p><strong>{recentScenario.title}</strong><br />{phaseLabel(recentScenario.phase)} · {recentScenario.own} / {recentScenario.opp} · {a(`variant${recentScenario.variant}`)}</p>
+        <div className="adminActions">
+          {recentScenario.status === 'draft' && <button type="button" className="primaryButton" disabled={busy || !recentScenario.video_id} onClick={() => void mutate('admin-scenario-status', { scenario_id: recentScenario.scenario_id, status: 'published' }, 'published')}>{a('publishNow')}</button>}
+          {recentScenario.status === 'published' && <button type="button" className="primaryButton" disabled={busy} onClick={() => onOpenAnalysis(recentScenario)}>{a('openAnalysis')}</button>}
+        </div>
+      </>}
+    </div>}
     {loading && !content && <p role="status" className="muted">{a('loading')}</p>}
     {!loading && !content && <button type="button" className="secondaryButton" onClick={load}>{a('retry')}</button>}
 
@@ -208,7 +226,7 @@ export default function AdminPanel({ onContentChanged }) {
 
     {content && section === 'scenarios' && <>
       <div className="adminToolbar"><input value={scenarioSearch} onChange={(event) => setScenarioSearch(event.target.value)} placeholder={a('scenarioSearch')} aria-label={a('scenarioSearch')} /><select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} aria-label={a('allStatuses')}><option value="all">{a('allStatuses')}</option>{['published', 'draft', 'inactive'].map((status) => <option key={status} value={status}>{a(`status.${status}`)}</option>)}</select><button className="primaryButton" onClick={() => selectEditor(null)} disabled={busy}>{a('newScenario')}</button></div>
-      <div ref={editorRef} className="adminEditorAnchor">{editor && <ScenarioEditor key={editor.scenario?.scenario_id || `new-${editor.initialVideoId}`} scenario={editor.scenario} initialVideoId={editor.initialVideoId} content={content} busy={busy} onClose={() => setEditor(null)} onSave={(scenario) => mutate('admin-scenarios', { scenario }, 'draftSaved')} />}</div>
+      <div ref={editorRef} className="adminEditorAnchor">{editor && <ScenarioEditor key={editor.scenario?.scenario_id || `new-${editor.initialVideoId}`} scenario={editor.scenario} initialVideoId={editor.initialVideoId} content={content} busy={busy} onClose={() => setEditor(null)} onSave={(scenario, publish) => mutate('admin-scenarios', { scenario, publish }, publish ? 'published' : 'draftSaved')} />}</div>
       <div className="adminScenarioList">{scenarios.map((scenario) => <article className="adminScenarioCard" key={scenario.scenario_id}>
         <div className="adminScenarioMeta"><span className={`adminStatus ${scenario.status}`}>{a(`status.${scenario.status}`)}</span>{scenario.original && <span className="muted">{a('originalScenario')}</span>}<span>{phaseLabel(scenario.phase)} · {scenario.own} / {scenario.opp} · {a(`variant${scenario.variant}`)}</span></div>
         <h3>{scenario.title}</h3><p>{scenario.objective}</p>

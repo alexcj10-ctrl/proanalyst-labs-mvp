@@ -147,11 +147,23 @@ function validatedScenario(input, existing, state) {
   };
 }
 
-export async function saveScenario(store, { revision, scenario } = {}) {
+function assertPublishable(scenario, state) {
+  if (!state.videos.some((video) => video.id === scenario.video_id && video.verified && !video.deleting)) fail(400, 'Per pubblicare è necessario un video MP4 verificato.');
+  if (state.scenarios.some((item) => item.scenario_id !== scenario.scenario_id && item.status === 'published' && tuple(item) === tuple(scenario))) {
+    fail(409, 'Esiste già uno scenario pubblicato per questa fase, questi sistemi di gioco e questa variante.');
+  }
+}
+
+export async function saveScenario(store, { revision, scenario, publish = false } = {}) {
+  if (typeof publish !== 'boolean') fail(400, 'La scelta di pubblicazione non è valida.');
   return updateContent(store, revision, (state) => {
     const existing = state.scenarios.find((item) => item.scenario_id === scenario?.scenario_id);
     if (scenario?.scenario_id && !existing) fail(404, 'Scenario non trovato.');
     const next = validatedScenario(scenario, existing, state);
+    if (publish) {
+      assertPublishable(next, state);
+      next.status = 'published';
+    }
     if (existing) state.scenarios[state.scenarios.indexOf(existing)] = next;
     else {
       if (state.scenarios.length >= 1000) fail(400, 'È stato raggiunto il limite di 1000 scenari.');
@@ -165,12 +177,7 @@ export async function setScenarioStatus(store, { revision, scenario_id: scenario
     if (!['published', 'draft', 'inactive'].includes(status)) fail(400, 'Stato dello scenario non valido.');
     const scenario = state.scenarios.find((item) => item.scenario_id === scenarioId);
     if (!scenario) fail(404, 'Scenario non trovato.');
-    if (status === 'published') {
-      if (!state.videos.some((video) => video.id === scenario.video_id && video.verified && !video.deleting)) fail(400, 'Per pubblicare è necessario un video MP4 verificato.');
-      if (state.scenarios.some((item) => item !== scenario && item.status === 'published' && tuple(item) === tuple(scenario))) {
-        fail(409, 'Esiste già uno scenario pubblicato per questa fase, questi sistemi di gioco e questa variante.');
-      }
-    }
+    if (status === 'published') assertPublishable(scenario, state);
     scenario.status = status;
   });
 }

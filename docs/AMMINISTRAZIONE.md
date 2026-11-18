@@ -55,8 +55,12 @@ Gli upload non sono pubblicazioni automatiche: occorre associare il video a uno 
 Dopo un upload verificato si apre automaticamente l’editor con il video appena caricato già selezionato.
 Il pulsante **Classifica video**, presente anche sui filmati già in libreria, apre lo stesso percorso.
 L’amministratore sceglie fase, sistema della squadra in possesso (`own`), sistema della squadra in non possesso
-(`opp`) e variante, quindi inserisce titolo, obiettivo e contenuti tattici. **Salva bozza** conserva il lavoro;
-**Pubblica** rende lo scenario selezionabile in Genera e nella Libreria senza un nuovo deploy.
+(`opp`) e variante, quindi inserisce titolo, obiettivo e contenuti tattici. **Salva e pubblica** conserva
+e pubblica in un’unica operazione atomica, rendendo lo scenario selezionabile in Genera e nella Libreria
+senza un nuovo deploy. Se la pubblicazione viene rifiutata, nessun dato viene sovrascritto e il modulo
+resta aperto. **Salva bozza** conserva invece il lavoro soltanto per l’amministratore, con il pulsante
+**Pubblica ora** subito nella conferma. Dopo la pubblicazione, **Apri in Analisi tattica** imposta
+automaticamente fase, sistemi, variante e video salvati. Il titolo non determina la fase di gioco.
 Una combinazione fase/sistemi/variante già pubblicata viene rifiutata per mantenere la selezione deterministica.
 Lo store video è pubblico, come richiesto per la demo: chi possiede un URL Blob può accedere al file;
 disattivare uno scenario lo rimuove dal catalogo dell’app, non revoca URL pubblici già condivisi.

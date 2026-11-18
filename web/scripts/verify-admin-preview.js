@@ -80,22 +80,22 @@ try {
   for (const label of ['Principi di gioco', 'Azioni chiave', 'Indicazioni per l’allenatore', 'Rischi tattici']) {
     await page.getByLabel(label, { exact: true }).fill('Coordinare tempi di movimento e distanze tra i reparti.');
   }
+  assert.equal((await api('catalog', undefined, { publicUser: true })).data.combos.length, 24);
   const saved = page.waitForResponse(response => response.url() === `${origin}/api/admin-scenarios`);
-  await page.getByRole('button', { name: 'Salva bozza', exact: true }).click();
+  await page.getByRole('button', { name: 'Salva e pubblica', exact: true }).click();
   const savedResponse = await saved;
   assert.equal(savedResponse.status(), 200); state = await savedResponse.json();
   testScenarioId = state.scenarios.find((item) => item.video_id === testVideoId).scenario_id;
-  assert.equal((await api('catalog', undefined, { publicUser: true })).data.combos.length, 24);
-  const publication = page.waitForResponse(response => response.url() === `${origin}/api/admin-scenario-status`);
-  await page.locator('.adminScenarioCard').filter({ hasText: scenario.title }).getByRole('button', { name: 'Pubblica', exact: true }).click();
-  const publicationResponse = await publication;
-  assert.equal(publicationResponse.status(), 200); state = await publicationResponse.json();
   const published = await api('catalog', undefined, { publicUser: true });
   assert.equal(published.data.combos.length, 25);
   const publicScenario = published.data.combos.find((item) => item.scenario_id === testScenarioId);
   assert.equal(publicScenario.video_url, testVideoUrl);
   for (const field of ['phase', 'own', 'opp', 'variant', 'title']) assert.equal(publicScenario[field], scenario[field]);
-  report.checks.push('upload opens classification with the exact video selected', 'classification, draft and publication through administrator UI');
+  await page.getByRole('button', { name: 'Apri in Analisi tattica', exact: true }).click();
+  assert.equal(await page.locator('.analysisVideo').getAttribute('src'), testVideoUrl);
+  assert.equal(await page.locator('.tacticalDetail h2').innerText(), scenario.title);
+  await page.getByRole('button', { name: 'Pannello amministratore' }).click();
+  report.checks.push('upload opens classification with the exact video selected', 'classification and atomic save-and-publish through administrator UI', 'published confirmation opens the exact tactical analysis');
   // New browser proves publication is visible without another build or an admin cookie.
   const publicPage = await visitor.newPage();
   await publicPage.goto(origin);
@@ -118,7 +118,7 @@ try {
   await publicPage.locator('.libraryCard').getByRole('button', { name: 'Apri analisi' }).click();
   assert.equal(await publicPage.locator('.analysisVideo').getAttribute('src'), testVideoUrl);
   assert.equal(await publicPage.getByRole('button', { name: 'Pannello amministratore' }).count(), 0);
-  report.checks.push('draft hidden, published scenario visible in a new public browser without deploy');
+  report.checks.push('uploaded video hidden until publication, then visible in a new public browser without deploy');
   await page.getByRole('button', { name: 'Statistiche', exact: true }).click();
   await page.locator('.adminStats').waitFor();
   await page.screenshot({ path: 'test-results/admin-preview-desktop.png', fullPage: true });

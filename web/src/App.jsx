@@ -830,7 +830,7 @@ export default function App() {
           </>
         )}
 
-        {view === "admin" && staff && <AdminPanel onContentChanged={refreshCatalog} />}
+        {view === "admin" && staff && <AdminPanel onContentChanged={refreshCatalog} onOpenAnalysis={openScenario} />}
         <footer className="appFooter">
           <span>{t("ProAnalyst Labs v1.1 · Tactical Intelligence Platform")}</span>
           <span>{t("Deterministic video layer today · Motor IA architecture next")}</span>
