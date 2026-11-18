@@ -1,0 +1,1145 @@
+{
+  "version": "1.1",
+  "phases": [
+    "build_up",
+    "finishing"
+  ],
+  "phase_roadmap": [
+    {
+      "id": "build_up",
+      "label": "Build Up",
+      "available": true
+    },
+    {
+      "id": "progression",
+      "label": "Progression",
+      "available": false
+    },
+    {
+      "id": "creation",
+      "label": "Creation",
+      "available": false
+    },
+    {
+      "id": "finishing",
+      "label": "Finishing",
+      "available": true
+    },
+    {
+      "id": "defensive_org",
+      "label": "Defensive Organisation",
+      "available": false
+    },
+    {
+      "id": "transition",
+      "label": "Transition",
+      "available": false
+    }
+  ],
+  "formations": [
+    "3-4-2-1",
+    "3-4-3",
+    "3-5-2",
+    "4-1-4-1",
+    "4-2-3-1",
+    "4-3-3",
+    "4-4-2",
+    "5-4-1"
+  ],
+  "own_by_phase": {
+    "build_up": [
+      "3-5-2",
+      "4-3-3",
+      "4-4-2"
+    ],
+    "finishing": [
+      "3-4-3",
+      "4-3-3",
+      "4-4-2"
+    ]
+  },
+  "opp_by_phase_own": {
+    "build_up": {
+      "3-5-2": [
+        "3-5-2",
+        "4-3-3",
+        "4-4-2"
+      ],
+      "4-3-3": [
+        "3-5-2",
+        "4-2-3-1",
+        "4-3-3",
+        "4-4-2"
+      ],
+      "4-4-2": [
+        "3-5-2",
+        "4-3-3",
+        "4-4-2"
+      ]
+    },
+    "finishing": {
+      "3-4-3": [
+        "3-5-2",
+        "4-3-3"
+      ],
+      "4-3-3": [
+        "4-3-3",
+        "5-4-1"
+      ],
+      "4-4-2": [
+        "4-3-3"
+      ]
+    }
+  },
+  "variants_by_phase_pair": {
+    "build_up|3-5-2|3-5-2": [
+      "A",
+      "B"
+    ],
+    "build_up|3-5-2|4-3-3": [
+      "A",
+      "B"
+    ],
+    "build_up|3-5-2|4-4-2": [
+      "A",
+      "B"
+    ],
+    "build_up|4-3-3|3-5-2": [
+      "A",
+      "B"
+    ],
+    "build_up|4-3-3|4-2-3-1": [
+      "A"
+    ],
+    "build_up|4-3-3|4-3-3": [
+      "A",
+      "B"
+    ],
+    "build_up|4-3-3|4-4-2": [
+      "A",
+      "B"
+    ],
+    "build_up|4-4-2|3-5-2": [
+      "A",
+      "B"
+    ],
+    "build_up|4-4-2|4-3-3": [
+      "A",
+      "B"
+    ],
+    "build_up|4-4-2|4-4-2": [
+      "A",
+      "B"
+    ],
+    "finishing|3-4-3|3-5-2": [
+      "FA"
+    ],
+    "finishing|3-4-3|4-3-3": [
+      "FA"
+    ],
+    "finishing|4-3-3|4-3-3": [
+      "FA"
+    ],
+    "finishing|4-3-3|5-4-1": [
+      "FA"
+    ],
+    "finishing|4-4-2|4-3-3": [
+      "FA"
+    ]
+  },
+  "press_by_phase_pair": {
+    "build_up|3-5-2|3-5-2": [
+      "A",
+      "B"
+    ],
+    "build_up|3-5-2|4-3-3": [
+      "A",
+      "B"
+    ],
+    "build_up|3-5-2|4-4-2": [
+      "A",
+      "B"
+    ],
+    "build_up|4-3-3|3-5-2": [
+      "A",
+      "B"
+    ],
+    "build_up|4-3-3|4-2-3-1": [
+      "A"
+    ],
+    "build_up|4-3-3|4-3-3": [
+      "A",
+      "B"
+    ],
+    "build_up|4-3-3|4-4-2": [
+      "A",
+      "B"
+    ],
+    "build_up|4-4-2|3-5-2": [
+      "A",
+      "B"
+    ],
+    "build_up|4-4-2|4-3-3": [
+      "A",
+      "B"
+    ],
+    "build_up|4-4-2|4-4-2": [
+      "A",
+      "B"
+    ],
+    "finishing|3-4-3|3-5-2": [
+      "FA"
+    ],
+    "finishing|3-4-3|4-3-3": [
+      "FA"
+    ],
+    "finishing|4-3-3|4-3-3": [
+      "FA"
+    ],
+    "finishing|4-3-3|5-4-1": [
+      "FA"
+    ],
+    "finishing|4-4-2|4-3-3": [
+      "FA"
+    ]
+  },
+  "combos": [
+    {
+      "scenario_id": "build_up|3-5-2|3-5-2|A",
+      "phase": "build_up",
+      "phase_label": "Build Up",
+      "own": "3-5-2",
+      "opp": "3-5-2",
+      "variant": "A",
+      "label": "Solution A",
+      "title": "Interior progression",
+      "objective": "Create a free player by attracting the first pressure and connecting through an interior support or third-man action.",
+      "principles": [
+        "Numerical superiority in the first line",
+        "Free-player identification",
+        "Third-man connection",
+        "Pressure attraction before progression"
+      ],
+      "key_actions": [
+        "Use the goalkeeper as an active build-up player when the press commits forward.",
+        "Keep supporting angles staggered instead of forming flat passing lines.",
+        "Fix the nearest presser before releasing the next receiver.",
+        "Accelerate after the free player receives facing forward."
+      ],
+      "risk_notes": [
+        "Central losses can expose the team before rest defence is organised.",
+        "The receiver must scan early because pressure can arrive from the blind side."
+      ],
+      "coaching_points": [
+        "Create distance before asking for the ball.",
+        "Receive with an open body whenever possible.",
+        "Do not force the vertical pass before the opponent is fixed."
+      ],
+      "profile": {
+        "risk": "Medium",
+        "verticality": "High",
+        "tempo": "Controlled → Fast"
+      },
+      "video": "352vs352A.mp4",
+      "press": "A"
+    },
+    {
+      "scenario_id": "build_up|3-5-2|3-5-2|B",
+      "phase": "build_up",
+      "phase_label": "Build Up",
+      "own": "3-5-2",
+      "opp": "3-5-2",
+      "variant": "B",
+      "label": "Solution B",
+      "title": "Outside release",
+      "objective": "Manipulate the press centrally and use width to escape through the outside lane with a safer first progression.",
+      "principles": [
+        "Width to stretch the press",
+        "Inside-to-outside circulation",
+        "Support behind the ball",
+        "Weak-side availability"
+      ],
+      "key_actions": [
+        "Invite pressure toward one side before changing the exit lane.",
+        "Keep the wide outlet available at a useful receiving height.",
+        "Support the first wide receiver with an inside option and a return pass.",
+        "Progress only when the opponent's block has been displaced."
+      ],
+      "risk_notes": [
+        "A slow switch can allow the opponent to trap the receiver near the touchline.",
+        "Excessive width without interior support can isolate the first receiver."
+      ],
+      "coaching_points": [
+        "Recognise when the central lane is intentionally closed.",
+        "Play away from pressure, not simply toward the touchline.",
+        "Keep the next pass prepared before the wide reception."
+      ],
+      "profile": {
+        "risk": "Low–Medium",
+        "verticality": "Medium",
+        "tempo": "Patient → Fast"
+      },
+      "video": "352vs352B.mp4",
+      "press": "B"
+    },
+    {
+      "scenario_id": "build_up|3-5-2|4-3-3|A",
+      "phase": "build_up",
+      "phase_label": "Build Up",
+      "own": "3-5-2",
+      "opp": "4-3-3",
+      "variant": "A",
+      "label": "Solution A",
+      "title": "Interior progression",
+      "objective": "Create a free player by attracting the first pressure and connecting through an interior support or third-man action.",
+      "principles": [
+        "Numerical superiority in the first line",
+        "Free-player identification",
+        "Third-man connection",
+        "Pressure attraction before progression"
+      ],
+      "key_actions": [
+        "Use the goalkeeper as an active build-up player when the press commits forward.",
+        "Keep supporting angles staggered instead of forming flat passing lines.",
+        "Fix the nearest presser before releasing the next receiver.",
+        "Accelerate after the free player receives facing forward."
+      ],
+      "risk_notes": [
+        "Central losses can expose the team before rest defence is organised.",
+        "The receiver must scan early because pressure can arrive from the blind side."
+      ],
+      "coaching_points": [
+        "Create distance before asking for the ball.",
+        "Receive with an open body whenever possible.",
+        "Do not force the vertical pass before the opponent is fixed."
+      ],
+      "profile": {
+        "risk": "Medium",
+        "verticality": "High",
+        "tempo": "Controlled → Fast"
+      },
+      "video": "352vs433A.mp4",
+      "press": "A"
+    },
+    {
+      "scenario_id": "build_up|3-5-2|4-3-3|B",
+      "phase": "build_up",
+      "phase_label": "Build Up",
+      "own": "3-5-2",
+      "opp": "4-3-3",
+      "variant": "B",
+      "label": "Solution B",
+      "title": "Outside release",
+      "objective": "Manipulate the press centrally and use width to escape through the outside lane with a safer first progression.",
+      "principles": [
+        "Width to stretch the press",
+        "Inside-to-outside circulation",
+        "Support behind the ball",
+        "Weak-side availability"
+      ],
+      "key_actions": [
+        "Invite pressure toward one side before changing the exit lane.",
+        "Keep the wide outlet available at a useful receiving height.",
+        "Support the first wide receiver with an inside option and a return pass.",
+        "Progress only when the opponent's block has been displaced."
+      ],
+      "risk_notes": [
+        "A slow switch can allow the opponent to trap the receiver near the touchline.",
+        "Excessive width without interior support can isolate the first receiver."
+      ],
+      "coaching_points": [
+        "Recognise when the central lane is intentionally closed.",
+        "Play away from pressure, not simply toward the touchline.",
+        "Keep the next pass prepared before the wide reception."
+      ],
+      "profile": {
+        "risk": "Low–Medium",
+        "verticality": "Medium",
+        "tempo": "Patient → Fast"
+      },
+      "video": "352vs433B.mp4",
+      "press": "B"
+    },
+    {
+      "scenario_id": "build_up|3-5-2|4-4-2|A",
+      "phase": "build_up",
+      "phase_label": "Build Up",
+      "own": "3-5-2",
+      "opp": "4-4-2",
+      "variant": "A",
+      "label": "Solution A",
+      "title": "Interior progression",
+      "objective": "Create a free player by attracting the first pressure and connecting through an interior support or third-man action.",
+      "principles": [
+        "Numerical superiority in the first line",
+        "Free-player identification",
+        "Third-man connection",
+        "Pressure attraction before progression"
+      ],
+      "key_actions": [
+        "Use the goalkeeper as an active build-up player when the press commits forward.",
+        "Keep supporting angles staggered instead of forming flat passing lines.",
+        "Fix the nearest presser before releasing the next receiver.",
+        "Accelerate after the free player receives facing forward."
+      ],
+      "risk_notes": [
+        "Central losses can expose the team before rest defence is organised.",
+        "The receiver must scan early because pressure can arrive from the blind side."
+      ],
+      "coaching_points": [
+        "Create distance before asking for the ball.",
+        "Receive with an open body whenever possible.",
+        "Do not force the vertical pass before the opponent is fixed."
+      ],
+      "profile": {
+        "risk": "Medium",
+        "verticality": "High",
+        "tempo": "Controlled → Fast"
+      },
+      "video": "352vs442A.mp4",
+      "press": "A"
+    },
+    {
+      "scenario_id": "build_up|3-5-2|4-4-2|B",
+      "phase": "build_up",
+      "phase_label": "Build Up",
+      "own": "3-5-2",
+      "opp": "4-4-2",
+      "variant": "B",
+      "label": "Solution B",
+      "title": "Outside release",
+      "objective": "Manipulate the press centrally and use width to escape through the outside lane with a safer first progression.",
+      "principles": [
+        "Width to stretch the press",
+        "Inside-to-outside circulation",
+        "Support behind the ball",
+        "Weak-side availability"
+      ],
+      "key_actions": [
+        "Invite pressure toward one side before changing the exit lane.",
+        "Keep the wide outlet available at a useful receiving height.",
+        "Support the first wide receiver with an inside option and a return pass.",
+        "Progress only when the opponent's block has been displaced."
+      ],
+      "risk_notes": [
+        "A slow switch can allow the opponent to trap the receiver near the touchline.",
+        "Excessive width without interior support can isolate the first receiver."
+      ],
+      "coaching_points": [
+        "Recognise when the central lane is intentionally closed.",
+        "Play away from pressure, not simply toward the touchline.",
+        "Keep the next pass prepared before the wide reception."
+      ],
+      "profile": {
+        "risk": "Low–Medium",
+        "verticality": "Medium",
+        "tempo": "Patient → Fast"
+      },
+      "video": "352vs442B.mp4",
+      "press": "B"
+    },
+    {
+      "scenario_id": "build_up|4-3-3|3-5-2|A",
+      "phase": "build_up",
+      "phase_label": "Build Up",
+      "own": "4-3-3",
+      "opp": "3-5-2",
+      "variant": "A",
+      "label": "Solution A",
+      "title": "Interior progression",
+      "objective": "Create a free player by attracting the first pressure and connecting through an interior support or third-man action.",
+      "principles": [
+        "Numerical superiority in the first line",
+        "Free-player identification",
+        "Third-man connection",
+        "Pressure attraction before progression"
+      ],
+      "key_actions": [
+        "Use the goalkeeper as an active build-up player when the press commits forward.",
+        "Keep supporting angles staggered instead of forming flat passing lines.",
+        "Fix the nearest presser before releasing the next receiver.",
+        "Accelerate after the free player receives facing forward."
+      ],
+      "risk_notes": [
+        "Central losses can expose the team before rest defence is organised.",
+        "The receiver must scan early because pressure can arrive from the blind side."
+      ],
+      "coaching_points": [
+        "Create distance before asking for the ball.",
+        "Receive with an open body whenever possible.",
+        "Do not force the vertical pass before the opponent is fixed."
+      ],
+      "profile": {
+        "risk": "Medium",
+        "verticality": "High",
+        "tempo": "Controlled → Fast"
+      },
+      "video": "433vs352A.mp4",
+      "press": "A"
+    },
+    {
+      "scenario_id": "build_up|4-3-3|3-5-2|B",
+      "phase": "build_up",
+      "phase_label": "Build Up",
+      "own": "4-3-3",
+      "opp": "3-5-2",
+      "variant": "B",
+      "label": "Solution B",
+      "title": "Outside release",
+      "objective": "Manipulate the press centrally and use width to escape through the outside lane with a safer first progression.",
+      "principles": [
+        "Width to stretch the press",
+        "Inside-to-outside circulation",
+        "Support behind the ball",
+        "Weak-side availability"
+      ],
+      "key_actions": [
+        "Invite pressure toward one side before changing the exit lane.",
+        "Keep the wide outlet available at a useful receiving height.",
+        "Support the first wide receiver with an inside option and a return pass.",
+        "Progress only when the opponent's block has been displaced."
+      ],
+      "risk_notes": [
+        "A slow switch can allow the opponent to trap the receiver near the touchline.",
+        "Excessive width without interior support can isolate the first receiver."
+      ],
+      "coaching_points": [
+        "Recognise when the central lane is intentionally closed.",
+        "Play away from pressure, not simply toward the touchline.",
+        "Keep the next pass prepared before the wide reception."
+      ],
+      "profile": {
+        "risk": "Low–Medium",
+        "verticality": "Medium",
+        "tempo": "Patient → Fast"
+      },
+      "video": "433vs352B.mp4",
+      "press": "B"
+    },
+    {
+      "scenario_id": "build_up|4-3-3|4-2-3-1|A",
+      "phase": "build_up",
+      "phase_label": "Build Up",
+      "own": "4-3-3",
+      "opp": "4-2-3-1",
+      "variant": "A",
+      "label": "Solution A",
+      "title": "Goalkeeper + third-man press escape",
+      "objective": "Use the goalkeeper to create first-line superiority, attract the 4-2-3-1 press and free a technically strong midfielder for the next progression.",
+      "principles": [
+        "Goalkeeper as +1",
+        "Numerical superiority",
+        "Free player",
+        "Third man",
+        "Pressure attraction"
+      ],
+      "key_actions": [
+        "Use the goalkeeper to force the first pressing line to choose a reference.",
+        "Create a passing angle that prevents the two central midfielders from being screened simultaneously.",
+        "Use a third-man connection when the direct central receiver is locked.",
+        "Accelerate once the free midfielder receives beyond the first pressure."
+      ],
+      "risk_notes": [
+        "The central turnover is dangerous if the rest-defence structure is not prepared.",
+        "Spacing must be large enough to stretch the press but short enough to protect the next pass."
+      ],
+      "coaching_points": [
+        "Do not bypass the goalkeeper if the extra player can move the press.",
+        "Fix one opponent before releasing the next player.",
+        "The third-man receiver should already know the forward option before receiving."
+      ],
+      "profile": {
+        "risk": "Medium",
+        "verticality": "High",
+        "tempo": "Controlled → Fast"
+      },
+      "video": "433vs4231.mp4",
+      "press": "A"
+    },
+    {
+      "scenario_id": "build_up|4-3-3|4-3-3|A",
+      "phase": "build_up",
+      "phase_label": "Build Up",
+      "own": "4-3-3",
+      "opp": "4-3-3",
+      "variant": "A",
+      "label": "Solution A",
+      "title": "Interior progression",
+      "objective": "Create a free player by attracting the first pressure and connecting through an interior support or third-man action.",
+      "principles": [
+        "Numerical superiority in the first line",
+        "Free-player identification",
+        "Third-man connection",
+        "Pressure attraction before progression"
+      ],
+      "key_actions": [
+        "Use the goalkeeper as an active build-up player when the press commits forward.",
+        "Keep supporting angles staggered instead of forming flat passing lines.",
+        "Fix the nearest presser before releasing the next receiver.",
+        "Accelerate after the free player receives facing forward."
+      ],
+      "risk_notes": [
+        "Central losses can expose the team before rest defence is organised.",
+        "The receiver must scan early because pressure can arrive from the blind side."
+      ],
+      "coaching_points": [
+        "Create distance before asking for the ball.",
+        "Receive with an open body whenever possible.",
+        "Do not force the vertical pass before the opponent is fixed."
+      ],
+      "profile": {
+        "risk": "Medium",
+        "verticality": "High",
+        "tempo": "Controlled → Fast"
+      },
+      "video": "433vs433A.mp4",
+      "press": "A"
+    },
+    {
+      "scenario_id": "build_up|4-3-3|4-3-3|B",
+      "phase": "build_up",
+      "phase_label": "Build Up",
+      "own": "4-3-3",
+      "opp": "4-3-3",
+      "variant": "B",
+      "label": "Solution B",
+      "title": "Outside release",
+      "objective": "Manipulate the press centrally and use width to escape through the outside lane with a safer first progression.",
+      "principles": [
+        "Width to stretch the press",
+        "Inside-to-outside circulation",
+        "Support behind the ball",
+        "Weak-side availability"
+      ],
+      "key_actions": [
+        "Invite pressure toward one side before changing the exit lane.",
+        "Keep the wide outlet available at a useful receiving height.",
+        "Support the first wide receiver with an inside option and a return pass.",
+        "Progress only when the opponent's block has been displaced."
+      ],
+      "risk_notes": [
+        "A slow switch can allow the opponent to trap the receiver near the touchline.",
+        "Excessive width without interior support can isolate the first receiver."
+      ],
+      "coaching_points": [
+        "Recognise when the central lane is intentionally closed.",
+        "Play away from pressure, not simply toward the touchline.",
+        "Keep the next pass prepared before the wide reception."
+      ],
+      "profile": {
+        "risk": "Low–Medium",
+        "verticality": "Medium",
+        "tempo": "Patient → Fast"
+      },
+      "video": "433vs433B.mp4",
+      "press": "B"
+    },
+    {
+      "scenario_id": "build_up|4-3-3|4-4-2|A",
+      "phase": "build_up",
+      "phase_label": "Build Up",
+      "own": "4-3-3",
+      "opp": "4-4-2",
+      "variant": "A",
+      "label": "Solution A",
+      "title": "Interior progression",
+      "objective": "Create a free player by attracting the first pressure and connecting through an interior support or third-man action.",
+      "principles": [
+        "Numerical superiority in the first line",
+        "Free-player identification",
+        "Third-man connection",
+        "Pressure attraction before progression"
+      ],
+      "key_actions": [
+        "Use the goalkeeper as an active build-up player when the press commits forward.",
+        "Keep supporting angles staggered instead of forming flat passing lines.",
+        "Fix the nearest presser before releasing the next receiver.",
+        "Accelerate after the free player receives facing forward."
+      ],
+      "risk_notes": [
+        "Central losses can expose the team before rest defence is organised.",
+        "The receiver must scan early because pressure can arrive from the blind side."
+      ],
+      "coaching_points": [
+        "Create distance before asking for the ball.",
+        "Receive with an open body whenever possible.",
+        "Do not force the vertical pass before the opponent is fixed."
+      ],
+      "profile": {
+        "risk": "Medium",
+        "verticality": "High",
+        "tempo": "Controlled → Fast"
+      },
+      "video": "433vs442A.mp4",
+      "press": "A"
+    },
+    {
+      "scenario_id": "build_up|4-3-3|4-4-2|B",
+      "phase": "build_up",
+      "phase_label": "Build Up",
+      "own": "4-3-3",
+      "opp": "4-4-2",
+      "variant": "B",
+      "label": "Solution B",
+      "title": "Outside release",
+      "objective": "Manipulate the press centrally and use width to escape through the outside lane with a safer first progression.",
+      "principles": [
+        "Width to stretch the press",
+        "Inside-to-outside circulation",
+        "Support behind the ball",
+        "Weak-side availability"
+      ],
+      "key_actions": [
+        "Invite pressure toward one side before changing the exit lane.",
+        "Keep the wide outlet available at a useful receiving height.",
+        "Support the first wide receiver with an inside option and a return pass.",
+        "Progress only when the opponent's block has been displaced."
+      ],
+      "risk_notes": [
+        "A slow switch can allow the opponent to trap the receiver near the touchline.",
+        "Excessive width without interior support can isolate the first receiver."
+      ],
+      "coaching_points": [
+        "Recognise when the central lane is intentionally closed.",
+        "Play away from pressure, not simply toward the touchline.",
+        "Keep the next pass prepared before the wide reception."
+      ],
+      "profile": {
+        "risk": "Low–Medium",
+        "verticality": "Medium",
+        "tempo": "Patient → Fast"
+      },
+      "video": "433vs442B.mp4",
+      "press": "B"
+    },
+    {
+      "scenario_id": "build_up|4-4-2|3-5-2|A",
+      "phase": "build_up",
+      "phase_label": "Build Up",
+      "own": "4-4-2",
+      "opp": "3-5-2",
+      "variant": "A",
+      "label": "Solution A",
+      "title": "Interior progression",
+      "objective": "Create a free player by attracting the first pressure and connecting through an interior support or third-man action.",
+      "principles": [
+        "Numerical superiority in the first line",
+        "Free-player identification",
+        "Third-man connection",
+        "Pressure attraction before progression"
+      ],
+      "key_actions": [
+        "Use the goalkeeper as an active build-up player when the press commits forward.",
+        "Keep supporting angles staggered instead of forming flat passing lines.",
+        "Fix the nearest presser before releasing the next receiver.",
+        "Accelerate after the free player receives facing forward."
+      ],
+      "risk_notes": [
+        "Central losses can expose the team before rest defence is organised.",
+        "The receiver must scan early because pressure can arrive from the blind side."
+      ],
+      "coaching_points": [
+        "Create distance before asking for the ball.",
+        "Receive with an open body whenever possible.",
+        "Do not force the vertical pass before the opponent is fixed."
+      ],
+      "profile": {
+        "risk": "Medium",
+        "verticality": "High",
+        "tempo": "Controlled → Fast"
+      },
+      "video": "442vs352A.mp4",
+      "press": "A"
+    },
+    {
+      "scenario_id": "build_up|4-4-2|3-5-2|B",
+      "phase": "build_up",
+      "phase_label": "Build Up",
+      "own": "4-4-2",
+      "opp": "3-5-2",
+      "variant": "B",
+      "label": "Solution B",
+      "title": "Outside release",
+      "objective": "Manipulate the press centrally and use width to escape through the outside lane with a safer first progression.",
+      "principles": [
+        "Width to stretch the press",
+        "Inside-to-outside circulation",
+        "Support behind the ball",
+        "Weak-side availability"
+      ],
+      "key_actions": [
+        "Invite pressure toward one side before changing the exit lane.",
+        "Keep the wide outlet available at a useful receiving height.",
+        "Support the first wide receiver with an inside option and a return pass.",
+        "Progress only when the opponent's block has been displaced."
+      ],
+      "risk_notes": [
+        "A slow switch can allow the opponent to trap the receiver near the touchline.",
+        "Excessive width without interior support can isolate the first receiver."
+      ],
+      "coaching_points": [
+        "Recognise when the central lane is intentionally closed.",
+        "Play away from pressure, not simply toward the touchline.",
+        "Keep the next pass prepared before the wide reception."
+      ],
+      "profile": {
+        "risk": "Low–Medium",
+        "verticality": "Medium",
+        "tempo": "Patient → Fast"
+      },
+      "video": "442vs352B.mp4",
+      "press": "B"
+    },
+    {
+      "scenario_id": "build_up|4-4-2|4-3-3|A",
+      "phase": "build_up",
+      "phase_label": "Build Up",
+      "own": "4-4-2",
+      "opp": "4-3-3",
+      "variant": "A",
+      "label": "Solution A",
+      "title": "Interior progression",
+      "objective": "Create a free player by attracting the first pressure and connecting through an interior support or third-man action.",
+      "principles": [
+        "Numerical superiority in the first line",
+        "Free-player identification",
+        "Third-man connection",
+        "Pressure attraction before progression"
+      ],
+      "key_actions": [
+        "Use the goalkeeper as an active build-up player when the press commits forward.",
+        "Keep supporting angles staggered instead of forming flat passing lines.",
+        "Fix the nearest presser before releasing the next receiver.",
+        "Accelerate after the free player receives facing forward."
+      ],
+      "risk_notes": [
+        "Central losses can expose the team before rest defence is organised.",
+        "The receiver must scan early because pressure can arrive from the blind side."
+      ],
+      "coaching_points": [
+        "Create distance before asking for the ball.",
+        "Receive with an open body whenever possible.",
+        "Do not force the vertical pass before the opponent is fixed."
+      ],
+      "profile": {
+        "risk": "Medium",
+        "verticality": "High",
+        "tempo": "Controlled → Fast"
+      },
+      "video": "442vs433A.mp4",
+      "press": "A"
+    },
+    {
+      "scenario_id": "build_up|4-4-2|4-3-3|B",
+      "phase": "build_up",
+      "phase_label": "Build Up",
+      "own": "4-4-2",
+      "opp": "4-3-3",
+      "variant": "B",
+      "label": "Solution B",
+      "title": "Outside release",
+      "objective": "Manipulate the press centrally and use width to escape through the outside lane with a safer first progression.",
+      "principles": [
+        "Width to stretch the press",
+        "Inside-to-outside circulation",
+        "Support behind the ball",
+        "Weak-side availability"
+      ],
+      "key_actions": [
+        "Invite pressure toward one side before changing the exit lane.",
+        "Keep the wide outlet available at a useful receiving height.",
+        "Support the first wide receiver with an inside option and a return pass.",
+        "Progress only when the opponent's block has been displaced."
+      ],
+      "risk_notes": [
+        "A slow switch can allow the opponent to trap the receiver near the touchline.",
+        "Excessive width without interior support can isolate the first receiver."
+      ],
+      "coaching_points": [
+        "Recognise when the central lane is intentionally closed.",
+        "Play away from pressure, not simply toward the touchline.",
+        "Keep the next pass prepared before the wide reception."
+      ],
+      "profile": {
+        "risk": "Low–Medium",
+        "verticality": "Medium",
+        "tempo": "Patient → Fast"
+      },
+      "video": "442vs433B.mp4",
+      "press": "B"
+    },
+    {
+      "scenario_id": "build_up|4-4-2|4-4-2|A",
+      "phase": "build_up",
+      "phase_label": "Build Up",
+      "own": "4-4-2",
+      "opp": "4-4-2",
+      "variant": "A",
+      "label": "Solution A",
+      "title": "Interior progression",
+      "objective": "Create a free player by attracting the first pressure and connecting through an interior support or third-man action.",
+      "principles": [
+        "Numerical superiority in the first line",
+        "Free-player identification",
+        "Third-man connection",
+        "Pressure attraction before progression"
+      ],
+      "key_actions": [
+        "Use the goalkeeper as an active build-up player when the press commits forward.",
+        "Keep supporting angles staggered instead of forming flat passing lines.",
+        "Fix the nearest presser before releasing the next receiver.",
+        "Accelerate after the free player receives facing forward."
+      ],
+      "risk_notes": [
+        "Central losses can expose the team before rest defence is organised.",
+        "The receiver must scan early because pressure can arrive from the blind side."
+      ],
+      "coaching_points": [
+        "Create distance before asking for the ball.",
+        "Receive with an open body whenever possible.",
+        "Do not force the vertical pass before the opponent is fixed."
+      ],
+      "profile": {
+        "risk": "Medium",
+        "verticality": "High",
+        "tempo": "Controlled → Fast"
+      },
+      "video": "442vs442A.mp4",
+      "press": "A"
+    },
+    {
+      "scenario_id": "build_up|4-4-2|4-4-2|B",
+      "phase": "build_up",
+      "phase_label": "Build Up",
+      "own": "4-4-2",
+      "opp": "4-4-2",
+      "variant": "B",
+      "label": "Solution B",
+      "title": "Outside release",
+      "objective": "Manipulate the press centrally and use width to escape through the outside lane with a safer first progression.",
+      "principles": [
+        "Width to stretch the press",
+        "Inside-to-outside circulation",
+        "Support behind the ball",
+        "Weak-side availability"
+      ],
+      "key_actions": [
+        "Invite pressure toward one side before changing the exit lane.",
+        "Keep the wide outlet available at a useful receiving height.",
+        "Support the first wide receiver with an inside option and a return pass.",
+        "Progress only when the opponent's block has been displaced."
+      ],
+      "risk_notes": [
+        "A slow switch can allow the opponent to trap the receiver near the touchline.",
+        "Excessive width without interior support can isolate the first receiver."
+      ],
+      "coaching_points": [
+        "Recognise when the central lane is intentionally closed.",
+        "Play away from pressure, not simply toward the touchline.",
+        "Keep the next pass prepared before the wide reception."
+      ],
+      "profile": {
+        "risk": "Low–Medium",
+        "verticality": "Medium",
+        "tempo": "Patient → Fast"
+      },
+      "video": "442vs442B.mp4",
+      "press": "B"
+    },
+    {
+      "scenario_id": "finishing|3-4-3|3-5-2|FA",
+      "phase": "finishing",
+      "phase_label": "Finishing",
+      "own": "3-4-3",
+      "opp": "3-5-2",
+      "variant": "FA",
+      "label": "Finishing Pattern",
+      "title": "Coordinated final-third occupation",
+      "objective": "Coordinate occupation of the box and supporting zones so the final action has multiple references instead of a single target.",
+      "principles": [
+        "Box occupation",
+        "Different arrival heights",
+        "Far-side presence",
+        "Second-ball structure"
+      ],
+      "key_actions": [
+        "Attack different finishing lanes rather than the same space.",
+        "Keep one support player available outside the immediate finishing line.",
+        "Coordinate near-side, central and far-side arrivals.",
+        "Maintain balance for the second action if the first finish is blocked."
+      ],
+      "risk_notes": [
+        "Too many simultaneous runs can empty the support zone behind the ball.",
+        "Poor rest defence can expose the team after a blocked cross or shot."
+      ],
+      "coaching_points": [
+        "Arrive at different times and heights.",
+        "Attack space, not only the ball.",
+        "Protect the next action while committing players to finish."
+      ],
+      "profile": {
+        "risk": "Medium",
+        "verticality": "High",
+        "tempo": "Dynamic"
+      },
+      "video": "343vs352FA.mp4",
+      "press": "FA"
+    },
+    {
+      "scenario_id": "finishing|3-4-3|4-3-3|FA",
+      "phase": "finishing",
+      "phase_label": "Finishing",
+      "own": "3-4-3",
+      "opp": "4-3-3",
+      "variant": "FA",
+      "label": "Finishing Pattern",
+      "title": "Coordinated final-third occupation",
+      "objective": "Coordinate occupation of the box and supporting zones so the final action has multiple references instead of a single target.",
+      "principles": [
+        "Box occupation",
+        "Different arrival heights",
+        "Far-side presence",
+        "Second-ball structure"
+      ],
+      "key_actions": [
+        "Attack different finishing lanes rather than the same space.",
+        "Keep one support player available outside the immediate finishing line.",
+        "Coordinate near-side, central and far-side arrivals.",
+        "Maintain balance for the second action if the first finish is blocked."
+      ],
+      "risk_notes": [
+        "Too many simultaneous runs can empty the support zone behind the ball.",
+        "Poor rest defence can expose the team after a blocked cross or shot."
+      ],
+      "coaching_points": [
+        "Arrive at different times and heights.",
+        "Attack space, not only the ball.",
+        "Protect the next action while committing players to finish."
+      ],
+      "profile": {
+        "risk": "Medium",
+        "verticality": "High",
+        "tempo": "Dynamic"
+      },
+      "video": "343vs433FA.mp4",
+      "press": "FA"
+    },
+    {
+      "scenario_id": "finishing|4-3-3|4-3-3|FA",
+      "phase": "finishing",
+      "phase_label": "Finishing",
+      "own": "4-3-3",
+      "opp": "4-3-3",
+      "variant": "FA",
+      "label": "Finishing Pattern",
+      "title": "Coordinated final-third occupation",
+      "objective": "Coordinate occupation of the box and supporting zones so the final action has multiple references instead of a single target.",
+      "principles": [
+        "Box occupation",
+        "Different arrival heights",
+        "Far-side presence",
+        "Second-ball structure"
+      ],
+      "key_actions": [
+        "Attack different finishing lanes rather than the same space.",
+        "Keep one support player available outside the immediate finishing line.",
+        "Coordinate near-side, central and far-side arrivals.",
+        "Maintain balance for the second action if the first finish is blocked."
+      ],
+      "risk_notes": [
+        "Too many simultaneous runs can empty the support zone behind the ball.",
+        "Poor rest defence can expose the team after a blocked cross or shot."
+      ],
+      "coaching_points": [
+        "Arrive at different times and heights.",
+        "Attack space, not only the ball.",
+        "Protect the next action while committing players to finish."
+      ],
+      "profile": {
+        "risk": "Medium",
+        "verticality": "High",
+        "tempo": "Dynamic"
+      },
+      "video": "433vs433FA.mp4",
+      "press": "FA"
+    },
+    {
+      "scenario_id": "finishing|4-3-3|5-4-1|FA",
+      "phase": "finishing",
+      "phase_label": "Finishing",
+      "own": "4-3-3",
+      "opp": "5-4-1",
+      "variant": "FA",
+      "label": "Finishing Pattern",
+      "title": "Coordinated final-third occupation",
+      "objective": "Coordinate occupation of the box and supporting zones so the final action has multiple references instead of a single target.",
+      "principles": [
+        "Box occupation",
+        "Different arrival heights",
+        "Far-side presence",
+        "Second-ball structure"
+      ],
+      "key_actions": [
+        "Attack different finishing lanes rather than the same space.",
+        "Keep one support player available outside the immediate finishing line.",
+        "Coordinate near-side, central and far-side arrivals.",
+        "Maintain balance for the second action if the first finish is blocked."
+      ],
+      "risk_notes": [
+        "Too many simultaneous runs can empty the support zone behind the ball.",
+        "Poor rest defence can expose the team after a blocked cross or shot."
+      ],
+      "coaching_points": [
+        "Arrive at different times and heights.",
+        "Attack space, not only the ball.",
+        "Protect the next action while committing players to finish."
+      ],
+      "profile": {
+        "risk": "Medium",
+        "verticality": "High",
+        "tempo": "Dynamic"
+      },
+      "video": "433vs541FA.mp4",
+      "press": "FA"
+    },
+    {
+      "scenario_id": "finishing|4-4-2|4-3-3|FA",
+      "phase": "finishing",
+      "phase_label": "Finishing",
+      "own": "4-4-2",
+      "opp": "4-3-3",
+      "variant": "FA",
+      "label": "Finishing Pattern",
+      "title": "Coordinated final-third occupation",
+      "objective": "Coordinate occupation of the box and supporting zones so the final action has multiple references instead of a single target.",
+      "principles": [
+        "Box occupation",
+        "Different arrival heights",
+        "Far-side presence",
+        "Second-ball structure"
+      ],
+      "key_actions": [
+        "Attack different finishing lanes rather than the same space.",
+        "Keep one support player available outside the immediate finishing line.",
+        "Coordinate near-side, central and far-side arrivals.",
+        "Maintain balance for the second action if the first finish is blocked."
+      ],
+      "risk_notes": [
+        "Too many simultaneous runs can empty the support zone behind the ball.",
+        "Poor rest defence can expose the team after a blocked cross or shot."
+      ],
+      "coaching_points": [
+        "Arrive at different times and heights.",
+        "Attack space, not only the ball.",
+        "Protect the next action while committing players to finish."
+      ],
+      "profile": {
+        "risk": "Medium",
+        "verticality": "High",
+        "tempo": "Dynamic"
+      },
+      "video": "442vs433FA.mp4",
+      "press": "FA"
+    }
+  ]
+}

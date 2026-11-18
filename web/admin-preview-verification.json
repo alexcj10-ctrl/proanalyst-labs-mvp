@@ -1,0 +1,22 @@
+{
+  "preview": "https://proanalyst-labs-pj4swofkq-alejandros-projects-a7058275.vercel.app",
+  "checked_at": "2026-11-18T17:38:56.884Z",
+  "checks": [
+    "all 10 administrative endpoints reject public users with HTTP 403",
+    "24 original scenarios published",
+    "owner login and protected cookie",
+    "missing CSRF token rejected",
+    "real browser multipart upload directly to Blob",
+    "server MP4 verification and persistent media registration",
+    "upload opens classification with the exact video selected",
+    "classification and atomic save-and-publish through administrator UI",
+    "published confirmation opens the exact tactical analysis",
+    "public user generates the exact video by phase, new formations and variant B",
+    "uploaded video playback and seek",
+    "uploaded video hidden until publication, then visible in a new public browser without deploy",
+    "private statistics and feedback",
+    "desktop and mobile panel/editor",
+    "deactivated scenario immediately removed from public catalog"
+  ],
+  "cleanup": true
+}

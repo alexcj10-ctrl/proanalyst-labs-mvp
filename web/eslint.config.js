@@ -26,4 +26,8 @@ export default defineConfig([
       'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
     },
   },
+  {
+    files: ['server/**/*.js', 'api/**/*.js', 'scripts/**/*.js', 'tests/**/*.js', 'vite.config.js', 'playwright.config.js'],
+    languageOptions: { globals: globals.node },
+  },
 ])

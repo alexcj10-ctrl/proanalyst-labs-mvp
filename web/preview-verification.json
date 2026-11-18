@@ -1,0 +1,135 @@
+{
+  "preview": "https://proanalyst-labs-gy5vc8rb6-alejandros-projects-a7058275.vercel.app",
+  "videos": [
+    {
+      "filename": "352vs352A.mp4",
+      "playback": true,
+      "seek": true
+    },
+    {
+      "filename": "352vs352B.mp4",
+      "playback": true,
+      "seek": true
+    },
+    {
+      "filename": "352vs433A.mp4",
+      "playback": true,
+      "seek": true
+    },
+    {
+      "filename": "352vs433B.mp4",
+      "playback": true,
+      "seek": true
+    },
+    {
+      "filename": "352vs442A.mp4",
+      "playback": true,
+      "seek": true
+    },
+    {
+      "filename": "352vs442B.mp4",
+      "playback": true,
+      "seek": true
+    },
+    {
+      "filename": "433vs352A.mp4",
+      "playback": true,
+      "seek": true
+    },
+    {
+      "filename": "433vs352B.mp4",
+      "playback": true,
+      "seek": true
+    },
+    {
+      "filename": "433vs4231.mp4",
+      "playback": true,
+      "seek": true
+    },
+    {
+      "filename": "433vs433A.mp4",
+      "playback": true,
+      "seek": true
+    },
+    {
+      "filename": "433vs433B.mp4",
+      "playback": true,
+      "seek": true
+    },
+    {
+      "filename": "433vs442A.mp4",
+      "playback": true,
+      "seek": true
+    },
+    {
+      "filename": "433vs442B.mp4",
+      "playback": true,
+      "seek": true
+    },
+    {
+      "filename": "442vs352A.mp4",
+      "playback": true,
+      "seek": true
+    },
+    {
+      "filename": "442vs352B.mp4",
+      "playback": true,
+      "seek": true
+    },
+    {
+      "filename": "442vs433A.mp4",
+      "playback": true,
+      "seek": true
+    },
+    {
+      "filename": "442vs433B.mp4",
+      "playback": true,
+      "seek": true
+    },
+    {
+      "filename": "442vs442A.mp4",
+      "playback": true,
+      "seek": true
+    },
+    {
+      "filename": "442vs442B.mp4",
+      "playback": true,
+      "seek": true
+    },
+    {
+      "filename": "343vs352FA.mp4",
+      "playback": true,
+      "seek": true
+    },
+    {
+      "filename": "343vs433FA.mp4",
+      "playback": true,
+      "seek": true
+    },
+    {
+      "filename": "433vs433FA.mp4",
+      "playback": true,
+      "seek": true
+    },
+    {
+      "filename": "433vs541FA.mp4",
+      "playback": true,
+      "seek": true
+    },
+    {
+      "filename": "442vs433FA.mp4",
+      "playback": true,
+      "seek": true
+    }
+  ],
+  "checks": [
+    "staff authorization",
+    "wrong password rejected",
+    "persistent feedback",
+    "persistent scenario request",
+    "private insights",
+    "logout revocation",
+    "mobile layout",
+    "no browser runtime errors"
+  ]
+}

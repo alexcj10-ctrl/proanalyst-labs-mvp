@@ -1,5 +1,13 @@
 # ProAnalyst Labs — Tactical Intelligence Platform
 
+> **React/Vite migration branch:** the frontend now runs independently of FastAPI.
+> Start with `cd web`, `npm ci`, `npm run dev`. See
+> [migration architecture, verification and Vercel setup](docs/MIGRATION_REACT_VERCEL.md).
+> All 24 tactical videos are hosted on public Vercel Blob. Staff authentication,
+> feedback, scenario requests and private insights run in Vercel Functions.
+> Production cutover is pending review; the migration branch has a separate preview.
+> The original backend instructions below are retained for the legacy deployment.
+
 This repository contains the **ProAnalyst Labs v1.1** deterministic MVP.
 
 The product has evolved from a simple tactical video selector into a decision workspace: coaches select a game phase and matchup, then receive a validated 3D scenario together with tactical objective, principles, key actions, risks and coaching points.

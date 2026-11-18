@@ -29,6 +29,8 @@ jobs:
           assert not missing, missing
           print(f"Verified {len(SEQUENCE_INDEX)} tactical scenarios")
           PY
+          python scripts/export_catalog.py --check
+          python -m unittest backend/test_catalog.py
 
       - uses: actions/setup-node@v4
         with:
@@ -41,3 +43,8 @@ jobs:
       - name: Build frontend
         working-directory: web
         run: npm run build
+      - name: Verify lint, roles, uploads and catalog persistence
+        working-directory: web
+        run: |
+          npm run lint
+          npm test
